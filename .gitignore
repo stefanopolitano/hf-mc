@@ -1,0 +1,14 @@
+*.pdf
+*.root
+*.txt
+*.log*
+*.stat
+*.done
+*.time
+*.list
+*.dat
+*.ini
+*.*log*
+*workerlog*
+*serverlog*
+*mergerlog*
