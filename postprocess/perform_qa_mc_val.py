@@ -8,17 +8,35 @@ import numpy as np
 import ROOT
 
 # gloabal variables
-part_names = ["DzeroToKPi", "DstarToDzeroPi",
-              "DplusToPiKPi", "DplusToPhiPiToKKPi",
-              "DsToPhiPiToKKPi", "LcToPKPi", "LcToPiK0s", "XiCplusToPKPi"]
-part_labels = ["D^{0} #rightarrow K#pi", "D*^{+} #rightarrow D^{0}#pi",
-               "D^{+} #rightarrow K#pi#pi", "D^{+} #rightarrow KK#pi",
-                "D_{s}^{+} #rightarrow KK#pi", "#Lambda_{c}^{+} #rightarrow pK#pi", "#Lambda_{c}^{+} #rightarrow pK^{0}_{s}", "#Xi_{c}^{+} #rightarrow pK#pi"]
-decay_labels = ["D^{0} #rightarrow K#pi", "D*^{+} #rightarrow D^{0}#pi",
-                "D^{+} #rightarrow K#pi#pi", "D^{+} #rightarrow KK#pi",
-                "D_{s}^{+} #rightarrow KK#pi"]
-decay_labels_baryons = ["#Lambda_{c}^{+} #rightarrow pK#pi", "#Lambda_{c}^{+} #rightarrow pK^{0}_{s}", "#Xi_{c}^{+} #rightarrow pK#pi"]
-plot = [True, True, True, True, True, True, True, True]
+particle_data = [
+    ("DzeroToKPi", "D^{0} #rightarrow K#pi"),
+    ("DstarToDzeroPi", "D*^{+} #rightarrow D^{0}#pi"),
+    ("DplusToPiKPi", "D^{+} #rightarrow K#pi#pi"),
+    ("DplusToPhiPiToKKPi", "D^{+} #rightarrow KK#pi"),
+    ("DsToPhiPiToKKPi", "D_{s}^{+} #rightarrow #phi#pi #rightarrow KK#pi"),
+    ("DsToK0starKToKKPi", "D_{s}^{+} #rightarrow K^{*}K #rightarrow KK#pi"),
+    ("Ds1ToDStarK0s", "D_{s}1 #rightarrow D*^{+}K^{0}_{s}"),
+    ("Ds2StarToDPlusK0s", "D_{s}2* #rightarrow D^{+}K^{0}_{s}"),
+    ("D10ToDStarPi", "D1^{0} #rightarrow D*^{+}#pi"),
+    ("D2Star0ToDPlusPi", "D2^{*} #rightarrow D^{+}#pi"),
+    ("LcToPKPi", "#Lambda_{c}^{+} #rightarrow pK#pi"),
+    ("LcToPiK0s", "#Lambda_{c}^{+} #rightarrow pK^{0}_{s}"),
+    ("XiCplusToPKPi", "#Xi_{c}^{+} #rightarrow pK#pi"),
+    ("XiCplusToXiPiPi", "#Xi_{c}^{+} #rightarrow #Xi#pi#pi"),
+    ("XiCzeroToXiPi", "#Xi_{c}^{0} #rightarrow #Xi#pi"),
+    ("OmegaCToOmegaPi", "#Omega_{c}^{0} #rightarrow #Omega#pi"),
+    ("OmegaCToXiPi", "#Omega_{c}^{0} #rightarrow #Xi#pi"),
+]
+plot_full=False # plot additional info, not needed for std QA
+nmesons=10 # number of meson needed to properly handle baryon histos
+
+# Extract part names and labels from particle_data
+part_names, part_labels = zip(*particle_data)
+
+# Decay labels and baryon labels are dynamically split based on the particle type
+decay_labels = part_labels[:nmesons]  # Meson decays
+decay_labels_baryons = part_labels[nmesons:]  # Baryon decays
+plot = [True] * len(part_names)
 
 pt_bins = np.array([0., 1., 2., 3., 4., 5., 6., 8., 10., 12., 16., 24., 50.])
 
@@ -126,11 +144,11 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_ass_tof, event_type, batch):
     leg_abundances.AddEntry(h_abundances_nonpromptmeson, "non-prompt", "l")
     canv_abundances.SetLogy()
     canv_abundances.SetRightMargin(0.1)
-    h_abundances_promptmeson.GetYaxis().SetRangeUser(1.e-5, 1.e2)
+    h_abundances_promptmeson.GetYaxis().SetRangeUser(1.e-8, 1.e2)
     for ipart, part_label in enumerate(decay_labels):
         h_abundances_promptmeson.GetXaxis().SetBinLabel(ipart+1, part_label)
     h_abundances_promptmeson.GetYaxis().SetDecimals()
-    h_abundances_promptmeson.GetXaxis().SetLabelSize(0.05)
+    h_abundances_promptmeson.GetXaxis().SetLabelSize(0.04)
     h_abundances_promptmeson.GetYaxis().SetTitle("Generated particles per collision")
     h_abundances_promptmeson.SetLineColor(ROOT.kRed+1)
     h_abundances_promptmeson.SetLineWidth(2)
@@ -143,7 +161,7 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_ass_tof, event_type, batch):
     canv_abundances.Modified()
     canv_abundances.Update()
     canv_abundances.SaveAs(os.path.join(
-        outpath, f"particle_abundances{suffix}.pdf"))
+        outpath, f"particle_abundances_mesons{suffix}.pdf"))
 
     # baryons
     canv_abundances_baryons = ROOT.TCanvas("canv_abundances_baryons", "", 600, 600)
@@ -187,24 +205,41 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_ass_tof, event_type, batch):
     leg.SetBorderSize(0)
 
     for ipart, (part_name, part_label) in enumerate(zip(part_names, part_labels)):
-        h_pt_gen_prompt.append(h_pt_gen_prompt_meson_vshad.ProjectionY(
-            f"h_pt_gen_prompt{part_name}", ipart+1, ipart+1))
-        h_pt_gen_nonprompt.append(h_pt_gen_nonprompt_meson_vshad.ProjectionY(
-            f"h_pt_gen_nonprompt{part_name}", ipart+1, ipart+1))
+        if ipart < nmesons:
+            h_pt_gen_p_hadron = h_pt_gen_prompt_meson_vshad
+            h_pt_gen_np_hadron = h_pt_gen_nonprompt_meson_vshad
+            h_y_gen_p_hadron = h_y_gen_prompt_meson_vshad
+            h_y_gen_np_hadron = h_y_gen_nonprompt_meson_vshad
+            h_dl_gen_p_hadron = h_declen_gen_prompt_meson_vshad
+            h_dl_gen_np_hadron = h_declen_gen_nonprompt_meson_vshad
+            iproj = ipart + 1
+        else:
+            h_pt_gen_p_hadron = h_pt_gen_prompt_baryon_vshad
+            h_pt_gen_np_hadron = h_pt_gen_nonprompt_baryon_vshad
+            h_y_gen_p_hadron = h_y_gen_prompt_baryon_vshad
+            h_y_gen_np_hadron = h_y_gen_nonprompt_baryon_vshad
+            h_dl_gen_p_hadron = h_declen_gen_prompt_baryon_vshad
+            h_dl_gen_np_hadron = h_declen_gen_nonprompt_baryon_vshad
+            iproj = ipart + 1 - nmesons
+
+        h_pt_gen_prompt.append(h_pt_gen_p_hadron.ProjectionY(
+            f"h_pt_gen_prompt{part_name}", iproj, iproj))
+        h_pt_gen_nonprompt.append(h_pt_gen_np_hadron.ProjectionY(
+            f"h_pt_gen_nonprompt{part_name}", iproj, iproj))
         h_pt_gen_prompt[ipart].Sumw2()
         h_pt_gen_nonprompt[ipart].Sumw2()
 
-        h_y_gen_prompt.append(h_y_gen_prompt_meson_vshad.ProjectionY(
-            f"h_y_gen_prompt{part_name}", ipart+1, ipart+1))
-        h_y_gen_nonprompt.append(h_y_gen_nonprompt_meson_vshad.ProjectionY(
-            f"h_y_gen_nonprompt{part_name}", ipart+1, ipart+1))
+        h_y_gen_prompt.append(h_y_gen_p_hadron.ProjectionY(
+            f"h_y_gen_prompt{part_name}", iproj, iproj))
+        h_y_gen_nonprompt.append(h_y_gen_np_hadron.ProjectionY(
+            f"h_y_gen_nonprompt{part_name}", iproj, iproj))
         h_y_gen_prompt[ipart].Sumw2()
         h_y_gen_nonprompt[ipart].Sumw2()
 
-        h_declen_gen_prompt.append(h_declen_gen_prompt_meson_vshad.ProjectionY(
-            f"h_declenen_gen_prompt{part_name}", ipart+1, ipart+1))
-        h_declen_gen_nonprompt.append(h_declen_gen_nonprompt_meson_vshad.ProjectionY(
-            f"h_declenen_gen_nonprompt{part_name}", ipart+1, ipart+1))
+        h_declen_gen_prompt.append(h_dl_gen_p_hadron.ProjectionY(
+            f"h_declenen_gen_prompt{part_name}", iproj, iproj))
+        h_declen_gen_nonprompt.append(h_dl_gen_np_hadron.ProjectionY(
+            f"h_declenen_gen_nonprompt{part_name}", iproj, iproj))
         h_declen_gen_prompt[ipart].Sumw2()
         h_declen_gen_nonprompt[ipart].Sumw2()
 
@@ -254,7 +289,7 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_ass_tof, event_type, batch):
         leg.Draw()
         canv_pt.Modified()
         canv_pt.Update()
-        canv_pt.SaveAs(os.path.join(outpath, f"{part_name}_ptgen_distr{suffix}.pdf"))
+        if plot_full: canv_pt.SaveAs(os.path.join(outpath, f"{part_name}_ptgen_distr{suffix}.pdf"))
 
         canv_y = ROOT.TCanvas(f"canv_y{part_name}", "", 500, 500)
         canv_y.Divide(3, 2)
@@ -271,7 +306,7 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_ass_tof, event_type, batch):
         leg.Draw()
         canv_y.Modified()
         canv_y.Update()
-        canv_y.SaveAs(os.path.join(outpath, f"{part_name}_ygen_distr{suffix}.pdf"))
+        if plot_full: canv_y.SaveAs(os.path.join(outpath, f"{part_name}_ygen_distr{suffix}.pdf"))
 
         canv_declen = ROOT.TCanvas(f"canv_declen{part_name}", "", 500, 500)
         canv_declen.Divide(3, 2)
@@ -289,8 +324,7 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_ass_tof, event_type, batch):
         leg.Draw()
         canv_declen.Modified()
         canv_declen.Update()
-        canv_declen.SaveAs(os.path.join(
-            outpath, f"{part_name}_declengen_distr{suffix}.pdf"))
+        if plot_full:  canv_declen.SaveAs(os.path.join(outpath, f"{part_name}_declengen_distr{suffix}.pdf"))
 
         h_pt_gen_prompt[ipart] = h_pt_gen_prompt[ipart].Rebin(
             len(pt_bins)-1,
@@ -371,8 +405,7 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_ass_tof, event_type, batch):
             h_eff_ratio[ipart].Draw("same")
             canv_ratio.Modified()
             canv_ratio.Update()
-            canv_ratio.SaveAs(os.path.join(
-                outpath, f"{part_name}_efficiency_ratio{suffix}.pdf"))
+            if plot_full:  canv_ratio.SaveAs(os.path.join(outpath, f"{part_name}_efficiency_ratio{suffix}.pdf"))
 
     h_ass, h_nonass, h_assgood, h_assgood_amb, \
         h_eff_ass, h_eff_assgood, h_eff_assgood_wamb = (
@@ -569,20 +602,17 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_ass_tof, event_type, batch):
 
     canv_coll_association.cd()
     leg_orig.Draw()
-    canv_coll_association.SaveAs(os.path.join(
-        outpath, f"collision_association_efficiency{suffix}.pdf"))
+    if plot_full: canv_coll_association.SaveAs(os.path.join(outpath, f"collision_association_efficiency{suffix}.pdf"))
 
     canv_coll_association_good.cd()
     leg_orig_wofake.Draw()
     lat.DrawLatex(0.2, 0.25, "Full markers: only main collision")
     lat.DrawLatex(0.2, 0.2, "Open markers: all compatible collisions")
-    canv_coll_association_good.SaveAs(os.path.join(
-        outpath, f"collision_good_association_efficiency{suffix}.pdf"))
+    if plot_full: canv_coll_association_good.SaveAs(os.path.join(outpath, f"collision_good_association_efficiency{suffix}.pdf"))
 
     canv_coll_association_eta.cd()
     leg_orig.Draw()
-    canv_coll_association_eta.SaveAs(os.path.join(
-        outpath, f"collision_association_efficiency_vseta{suffix}.pdf"))
+    if plot_full: canv_coll_association_eta.SaveAs(os.path.join(outpath, f"collision_association_efficiency_vseta{suffix}.pdf"))
 
     canv_coll_association_good_eta.cd()
     leg_orig_wofake.Draw()
@@ -595,8 +625,7 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_ass_tof, event_type, batch):
     leg_orig_wofake.SetY1(0.7)
     leg_orig_wofake.SetY2(0.9)
     leg_orig_wofake.Draw()
-    canv_zvtx.SaveAs(os.path.join(
-        outpath, f"Zvtx_residual_matchedcoll{suffix}.pdf"))
+    if plot_full: canv_zvtx.SaveAs(os.path.join(outpath, f"Zvtx_residual_matchedcoll{suffix}.pdf"))
 
     # ambiguous tracks
     canv_fracanv_amb = ROOT.TCanvas("canv_fracanv_amb", "", 800, 800)
@@ -624,8 +653,7 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_ass_tof, event_type, batch):
         h_fracanv_amb_per_origin[iorigin].Draw("same")
     canv_fracanv_amb.cd()
     leg_orig_wofake.Draw()
-    canv_fracanv_amb.SaveAs(os.path.join(
-        outpath, f"fraction_ambiguous_tracks{suffix}.pdf"))
+    if plot_full: canv_fracanv_amb.SaveAs(os.path.join(outpath, f"fraction_ambiguous_tracks{suffix}.pdf"))
 
     # fake PV
     h_ntracks = infile.Get(f"{task_rec_name}/histNtracks")
@@ -652,8 +680,7 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_ass_tof, event_type, batch):
     canv_collisions.SetTopMargin(0.05)
     canv_collisions.SetBottomMargin(0.1)
     h_collisions.Draw()
-    canv_collisions.SaveAs(os.path.join(
-        outpath, f"collision_counter{suffix}.pdf"))
+    if plot_full: canv_collisions.SaveAs(os.path.join(outpath, f"collision_counter{suffix}.pdf"))
 
     h_coll_samebc = infile.Get(f"{task_rec_name}/{track_to_coll_path}/histCollisionsSameBC")
 
@@ -725,47 +752,46 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_ass_tof, event_type, batch):
     canv_corr_ncontr.cd(3).SetRightMargin(0.12)
     canv_corr_ncontr.cd(3).SetLogz()
     h_corr_ncontr_withb2.Draw("colz")
-    canv_corr_ncontr.SaveAs(os.path.join(
-        outpath, f"correlation_number_contributors_collisions_samebc{suffix}.pdf"))
+    if plot_full:  canv_corr_ncontr.SaveAs(os.path.join(outpath, f"correlation_number_contributors_collisions_samebc{suffix}.pdf"))
 
     canv_corr_nbeauty = ROOT.TCanvas("canv_corr_nbeauty", "", 800, 800)
     canv_corr_nbeauty.SetRightMargin(0.12)
     h_corr_nbeauty.Draw("colz")
-    canv_corr_nbeauty.SaveAs(os.path.join(
-        outpath, f"correlation_number_beauty_collisions_samebc{suffix}.pdf"))
+    if plot_full: canv_corr_nbeauty.SaveAs(os.path.join(outpath, f"correlation_number_beauty_collisions_samebc{suffix}.pdf"))
 
     canv_corr_ncontr_nbeauty = ROOT.TCanvas(
         "canv_corr_ncontr_nbeauty", "", 800, 800)
     canv_corr_ncontr_nbeauty.SetRightMargin(0.12)
     h_corr_ncontr_nbeauty.Draw("colz")
-    canv_corr_ncontr_nbeauty.SaveAs(os.path.join(
-        outpath, f"correlation_number_contributors_number_beauty_collisions_samebc{suffix}.pdf"))
+    if plot_full: canv_corr_ncontr_nbeauty.SaveAs(os.path.join(outpath, f"correlation_number_contributors_number_beauty_collisions_samebc{suffix}.pdf"))
 
     canv_corr_radius = ROOT.TCanvas("canv_corr_radius", "", 800, 800)
     canv_corr_radius.SetRightMargin(0.12)
     h_corr_radius.Draw("colz")
-    canv_corr_radius.SaveAs(os.path.join(
-        outpath, f"correlation_radius_collisions_samebc{suffix}.pdf"))
+    if plot_full: canv_corr_radius.SaveAs(os.path.join(outpath, f"correlation_radius_collisions_samebc{suffix}.pdf"))
 
     canv_corr_ncontr_radius = ROOT.TCanvas(
         "canv_corr_ncontr_radius", "", 800, 800)
     canv_corr_ncontr_radius.SetRightMargin(0.12)
     h_corr_ncontr_radius.Draw("colz")
-    canv_corr_ncontr_radius.SaveAs(os.path.join(
+    if plot_full:
+        canv_corr_ncontr_radius.SaveAs(os.path.join(
         outpath, f"correlation_number_contributors_radius_collisions_samebc{suffix}.pdf"))
 
     canv_corr_ncontr_radius_nobeauty = ROOT.TCanvas(
         "canv_corr_ncontr_radius_nobeauty", "", 800, 800)
     canv_corr_ncontr_radius_nobeauty.SetRightMargin(0.12)
     h_corr_ncontr_radius_nobeauty.Draw("colz")
-    canv_corr_ncontr_radius_nobeauty.SaveAs(os.path.join(
-        outpath, f"correlation_number_contributors_radius_collisions_samebcanv_nobeauty{suffix}.pdf"))
+    if plot_full:
+        canv_corr_ncontr_radius_nobeauty.SaveAs(os.path.join(
+            outpath, f"correlation_number_contributors_radius_collisions_samebcanv_nobeauty{suffix}.pdf"))
 
     canv_corr_nbeauty_radius = ROOT.TCanvas(
         "canv_corr_nbeauty_radius", "", 800, 800)
     canv_corr_nbeauty_radius.SetRightMargin(0.12)
     h_corr_nbeauty_radius.Draw("colz")
-    canv_corr_nbeauty_radius.SaveAs(os.path.join(
+    if plot_full:
+        canv_corr_nbeauty_radius.SaveAs(os.path.join(
         outpath, f"correlation_number_beauty_radius_collisions_samebc{suffix}.pdf"))
     
     output = ROOT.TFile(os.path.join(outpath, f"QA_output{suffix}.root"), "recreate")
