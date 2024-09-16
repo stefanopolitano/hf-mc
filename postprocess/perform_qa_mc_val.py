@@ -618,8 +618,7 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_ass_tof, event_type, batch):
     leg_orig_wofake.Draw()
     lat.DrawLatex(0.2, 0.25, "Full markers: only main collision")
     lat.DrawLatex(0.2, 0.2, "Open markers: all compatible collisions")
-    canv_coll_association_good_eta.SaveAs(os.path.join(
-        outpath, f"collision_good_association_efficiency_vseta{suffix}.pdf"))
+    if plot_full: canv_coll_association_good_eta.SaveAs(os.path.join(outpath, f"collision_good_association_efficiency_vseta{suffix}.pdf"))
 
     canv_zvtx.cd()
     leg_orig_wofake.SetY1(0.7)
