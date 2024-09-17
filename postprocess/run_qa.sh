@@ -67,3 +67,4 @@ if [ -n "$ABUNDANCES_PDFS" ]; then
 else
     echo "No abundances PDF files found to merge."
 fi
+if [ -n "$ABUNDANCES_PDFS" ]; then

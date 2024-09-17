@@ -668,9 +668,9 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_ass_tof, event_type, batch):
     h_frac_good_contr.SetLineWidth(2)
 
     h_collisions = ROOT.TH1F("h_collisions", ";;counts", 2, 0.5, 2.5)
-    h_collisions.GetXaxis().SetBinLabel(1, "generated collisions")
+    h_collisions.GetXaxis().SetBinLabel(1, "generated collisions (count. TVX)")
     h_collisions.GetXaxis().SetBinLabel(2, "reconstructed collisions")
-    h_collisions.SetBinContent(1, infile.Get(f"{task_gen_name}/Quarks/hCountC").GetEntries())
+    h_collisions.SetBinContent(1, infile.Get("bc-selection-task/hCounterTVX").GetEntries())
     h_collisions.SetBinContent(2, infile.Get(f"{task_rec_name}/histXvtxReco").GetEntries())
     h_collisions.SetLineColor(ROOT.kBlack)
     h_collisions.SetLineWidth(2)
@@ -679,7 +679,19 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_ass_tof, event_type, batch):
     canv_collisions.SetTopMargin(0.05)
     canv_collisions.SetBottomMargin(0.1)
     h_collisions.Draw()
-    if plot_full: canv_collisions.SaveAs(os.path.join(outpath, f"collision_counter{suffix}.pdf"))
+    canv_collisions.SaveAs(os.path.join(outpath, f"collision_counter{suffix}.pdf"))
+
+    h_collisions_eff = ROOT.TH1F("h_collisions_eff", ";;reco. efficiency", 1, 0.5, 1.5)
+    h_collisions_eff.GetXaxis().SetBinLabel(1, "collision reco. efficiency")
+    h_collisions_eff.SetBinContent(1, h_collisions.GetBinContent(2) / h_collisions.GetBinContent(1))
+    h_collisions_eff.SetLineColor(ROOT.kBlack)
+    h_collisions_eff.SetLineWidth(2)
+
+    canv_collisions_eff = ROOT.TCanvas("canv_collisions_eff", "", 800, 800)
+    canv_collisions_eff.SetTopMargin(0.05)
+    canv_collisions_eff.SetBottomMargin(0.1)
+    h_collisions_eff.Draw()
+    canv_collisions_eff.SaveAs(os.path.join(outpath, f"collision_reco_eff{suffix}.pdf"))
 
     h_coll_samebc = infile.Get(f"{task_rec_name}/{track_to_coll_path}/histCollisionsSameBC")
 
