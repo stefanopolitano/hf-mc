@@ -5,8 +5,8 @@
 # Define default parameters
 TARGET_DIR="./inputs/"
 OUTPUT_DIR="./outputs/"
-INPUT_DIRS=("/alice/cern.ch/user/a/alihyperloop/outputs/0026/264990/40170")
-SUFFIXES=("HF_LHC24h1_All_train264990")
+INPUT_DIRS=("/alice/cern.ch/user/a/alihyperloop/outputs/0026/264984/40166")
+SUFFIXES=("HF_LHC24h2_All_train264984")
 FILES_TO_MERGE=("AnalysisResults")
 CURRENT_DIR=$(pwd)
 
@@ -41,9 +41,6 @@ if [ -n "$EFFICIENCY_PDFS" ]; then
 
     # Merge PDFs using pdfunite or gs
     pdfunite $EFFICIENCY_PDFS "$MERGED_PDF"
-    
-    # Alternatively, you can use Ghostscript (gs) for merging if pdfunite is unavailable
-    # gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile="$MERGED_PDF" $EFFICIENCY_PDFS
 
     echo "Merged efficiency PDFs into $MERGED_PDF"
 else
@@ -59,12 +56,23 @@ if [ -n "$ABUNDANCES_PDFS" ]; then
 
     # Merge PDFs using pdfunite or gs
     pdfunite $ABUNDANCES_PDFS "$MERGED_PDF"
-    
-    # Alternatively, you can use Ghostscript (gs) for merging if pdfunite is unavailable
-    # gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile="$MERGED_PDF" $EFFICIENCY_PDFS
 
     echo "Merged abundances PDFs into $MERGED_PDF"
 else
     echo "No abundances PDF files found to merge."
 fi
-if [ -n "$ABUNDANCES_PDFS" ]; then
+
+# Merge all PDF files with "collisions" in the filename into a single PDF
+COLLISIONS_PDFS=$(find "$OUTPUT_DIR" -name "collision*.pdf" | sort)
+
+if [ -n "$COLLISIONS_PDFS" ]; then
+    # Output merged PDF name
+    MERGED_PDF="$OUTPUT_DIR/$SUFFIXES _collision.pdf"
+
+    # Merge PDFs using pdfunite or gs
+    pdfunite $COLLISIONS_PDFS "$MERGED_PDF"
+
+    echo "Merged collisions PDFs into $MERGED_PDF"
+else
+    echo "No collisions PDF files found to merge."
+fi

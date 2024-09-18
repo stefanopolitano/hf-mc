@@ -668,9 +668,9 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_ass_tof, event_type, batch):
     h_frac_good_contr.SetLineWidth(2)
 
     h_collisions = ROOT.TH1F("h_collisions", ";;counts", 2, 0.5, 2.5)
-    h_collisions.GetXaxis().SetBinLabel(1, "generated collisions (count. TVX)")
+    h_collisions.GetXaxis().SetBinLabel(1, "generated collisions")
     h_collisions.GetXaxis().SetBinLabel(2, "reconstructed collisions")
-    h_collisions.SetBinContent(1, infile.Get("bc-selection-task/hCounterTVX").GetEntries())
+    h_collisions.SetBinContent(1, infile.Get(f"{task_gen_name}/Quarks/hCountC").GetEntries())
     h_collisions.SetBinContent(2, infile.Get(f"{task_rec_name}/histXvtxReco").GetEntries())
     h_collisions.SetLineColor(ROOT.kBlack)
     h_collisions.SetLineWidth(2)
