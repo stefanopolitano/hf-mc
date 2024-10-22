@@ -5,10 +5,11 @@
 # Define default parameters
 TARGET_DIR="./inputs/"
 OUTPUT_DIR="./outputs/"
-INPUT_DIRS=("/alice/cern.ch/user/a/alihyperloop/outputs/0026/264984/40166")
-SUFFIXES=("HF_LHC24h2_All_train264984")
+INPUT_DIRS=("/alice/cern.ch/user/a/alihyperloop/jobs/0079/hy_795848")
+SUFFIXES=("HF_LHC24g2_Small_2P3PDstar_020_train278233")
 FILES_TO_MERGE=("AnalysisResults")
 CURRENT_DIR=$(pwd)
+SYSTEM=PbPb
 
 # Submit the Python script with the provided arguments
 python3 download.py \
@@ -24,7 +25,7 @@ cp run_qa.sh $OUTPUT_DIR
 
 # Run QA
 python3 perform_qa_mc_val.py \
-    "$CURRENT_DIR/inputs/AnalysisResults_$SUFFIXES.root" $OUTPUT_DIR "_$SUFFIXES"
+    "$CURRENT_DIR/inputs/AnalysisResults_$SUFFIXES.root" $OUTPUT_DIR "_$SUFFIXES" "$SYSTEM"
 
 # Clean pdf files older than 6 months
 find "$OUTPUT_DIR" -name "*.pdf" -type f -mtime +180 -exec rm -f {} \;
