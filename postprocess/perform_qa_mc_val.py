@@ -27,7 +27,7 @@ particle_data = [
     ("OmegaCToOmegaPi", "#Omega_{c}^{0} #rightarrow #Omega#pi"),
     ("OmegaCToXiPi", "#Omega_{c}^{0} #rightarrow #Xi#pi"),
 ]
-plot_full=True # plot additional info, not needed for std QA
+plot_full=False # plot additional info, not needed for std QA
 nmesons=10 # number of meson needed to properly handle baryon histos
 
 # Extract part names and labels from particle_data
@@ -38,8 +38,8 @@ decay_labels = part_labels[:nmesons]  # Meson decays
 decay_labels_baryons = part_labels[nmesons:]  # Baryon decays
 plot = [True] * len(part_names)
 
-pt_bins = np.array([0., 1., 2., 3., 4., 5., 6., 8., 10., 12., 16., 24., 50.])
-cent_bins = [0., 10., 20., 30., 40., 50., 60., 80., 100.]
+pt_bins = np.array([0., 1., 2., 3., 4., 5., 6., 8., 10., 12., 16., 24., 36, 50.])
+cent_bins = [0., 110]
 
 #origin_labels = ["fake", "light", "charm", "beauty"]
 origin_labels = []
@@ -107,7 +107,9 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
     if event_type == "c":
         ev_tag = "_charm"
 
-    ncent_bins = len(cent_bins) -1 if coll_system == 'PbPb' else 1
+    if coll_system == 'pp':
+        cent_bins = [0, 110] # default value in pp is 105
+    ncent_bins = len(cent_bins) -1
 
     ev_tag = ""
     outpath += ev_tag
@@ -417,9 +419,9 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
             h_eff_nonprompt[ipart].append(compute_eff_vcent(h_pt_vcent_gen_nonprompt[part_name],
                                                      h_pt_vcent_reco_nonprompt[part_name],
                                                      0, 100))
-            h_eff_prompt[ipart][-1].SetName(f"h_eff_prompt{part_name}_vcent0_100")
-            h_eff_nonprompt[ipart][-1].SetName(f"h_eff_nonprompt{part_name}_vcent0_100")
-            h_eff_ratio[ipart].append(h_eff_nonprompt[ipart][-1].Clone(f"h_eff_ratio{part_name}_vcent0_100"))
+            h_eff_prompt[ipart][-1].SetName(f"h_eff_prompt{part_name}vcent0_100")
+            h_eff_nonprompt[ipart][-1].SetName(f"h_eff_nonprompt{part_name}vcent0_100")
+            h_eff_ratio[ipart].append(h_eff_nonprompt[ipart][-1].Clone(f"h_eff_ratio{part_name}vcent0_100"))
             if h_eff_prompt[ipart][-1].GetEntries() != 0:
                 h_eff_ratio[ipart][-1].Divide(h_eff_prompt[ipart][-1])
             h_eff_ratio[ipart][-1].SetTitle(";#it{p}_{T} (GeV/#it{c});non-prompt / prompt")
@@ -435,9 +437,9 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
                 h_eff_nonprompt[ipart].append(compute_eff_vcent(h_pt_vcent_gen_nonprompt[part_name],
                                                       h_pt_vcent_reco_nonprompt[part_name],
                                                       cent_min, cent_max))
-                h_eff_prompt[ipart][-1].SetName(f"h_eff_prompt{part_name}_vcent{cent_min}_{cent_max}")
-                h_eff_nonprompt[ipart][-1].SetName(f"h_eff_nonprompt{part_name}_vcent{cent_min}_{cent_max}")
-                h_eff_ratio[ipart].append(h_eff_nonprompt[ipart][-1].Clone(f"h_eff_ratio{part_name}_vcent{cent_min}_{cent_max}"))
+                h_eff_prompt[ipart][-1].SetName(f"h_eff_prompt{part_name}vcent{cent_min}_{cent_max}")
+                h_eff_nonprompt[ipart][-1].SetName(f"h_eff_nonprompt{part_name}vcent{cent_min}_{cent_max}")
+                h_eff_ratio[ipart].append(h_eff_nonprompt[ipart][-1].Clone(f"h_eff_ratio{part_name}vcent{cent_min}_{cent_max}"))
                 if h_eff_prompt[ipart][-1].GetEntries() != 0:
                     h_eff_ratio[ipart][-1].Divide(h_eff_prompt[ipart][-1])
                 h_eff_ratio[ipart][-1].SetTitle(";#it{p}_{T} (GeV/#it{c});non-prompt / prompt")
@@ -447,36 +449,15 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
                 set_style(h_eff_ratio[ipart][-1], '')
         # pp
         else:
-            proj_gen_p = h_pt_vcent_gen_prompt[part_name].ProjectionX('gen')
-            proj_gen_np = h_pt_vcent_gen_nonprompt[part_name].ProjectionX('gen')
-            proj_reco_p = h_pt_vcent_reco_prompt[part_name].ProjectionX('reco')
-            proj_reco_np = h_pt_vcent_reco_nonprompt[part_name].ProjectionX('reco')
-            proj_reco_p = proj_reco_p.Rebin(len(pt_bins)-1,
-                                            proj_reco_p.GetName(),
-                                            pt_bins)
-            proj_gen_p = proj_gen_p.Rebin(len(pt_bins)-1,
-                                          proj_gen_p.GetName(),
-                                          pt_bins)
-            proj_reco_np = proj_reco_np.Rebin(len(pt_bins)-1,
-                                              proj_reco_np.GetName(),
-                                              pt_bins)
-            proj_gen_np = proj_gen_np.Rebin(len(pt_bins)-1,
-                                          proj_gen_np.GetName(),
-                                          pt_bins)
-
-            h_eff_prompt[ipart].append(proj_reco_p.Clone(f"h_eff_prompt{part_name}"))
-            h_eff_nonprompt[ipart].append(proj_reco_np.Clone(f"h_eff_nonprompt{part_name}"))
-            if proj_gen_p.GetEntries() != 0:
-                h_eff_prompt[ipart][-1].Divide(proj_reco_p, proj_gen_p, 1., 1., "B")
-            else:
-                h_eff_prompt[ipart][-1].Reset()
-
-            if proj_gen_np.GetEntries() != 0:
-                h_eff_nonprompt[ipart][-1].Divide(proj_reco_np, proj_gen_np, 1., 1., "B")
-            else:
-                h_eff_nonprompt[ipart][-1].Reset()
-
-            h_eff_ratio[ipart].append(h_eff_nonprompt[ipart][-1].Clone(f"h_eff_ratio{part_name}_vcent0_100"))
+            h_eff_prompt[ipart].append(compute_eff_vcent(h_pt_vcent_gen_prompt[part_name],
+                                                  h_pt_vcent_reco_prompt[part_name],
+                                                  0, 110))
+            h_eff_nonprompt[ipart].append(compute_eff_vcent(h_pt_vcent_gen_nonprompt[part_name],
+                                                     h_pt_vcent_reco_nonprompt[part_name],
+                                                     0, 110))
+            h_eff_prompt[ipart][-1].SetName(f"h_eff_prompt{part_name}vcent0_110")
+            h_eff_nonprompt[ipart][-1].SetName(f"h_eff_nonprompt{part_name}vcent0_110")
+            h_eff_ratio[ipart].append(h_eff_nonprompt[ipart][-1].Clone(f"h_eff_ratio{part_name}vcent0_110"))
             if h_eff_prompt[ipart][-1].GetEntries() != 0:
                 h_eff_ratio[ipart][-1].Divide(h_eff_prompt[ipart][-1])
             h_eff_ratio[ipart][-1].SetTitle(";#it{p}_{T} (GeV/#it{c});non-prompt / prompt")
@@ -502,17 +483,15 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
                 cent_label = f'_vcent{cent_min}_{cent_max}'
 
                 canv = ROOT.TCanvas(f"c{part_name}{cent_label}", "", 500, 500)
-                canv.Divide(3, 2)
-                canv.cd().DrawFrame(0.,
-                                    max(min(heff_p.GetMinimum(
-                                    ), heff_np.GetMinimum()), 1.e-5) * 0.5,
+                canv.cd().SetGridy()
+                canv.cd().SetGridx()
+                canv.cd().DrawFrame(1.e-10,
+                                    max(min(heff_p.GetMinimum(), heff_np.GetMinimum()), 1.e-5) * 0.5,
                                     pt_bins[-1],
                                     1.5,
                                     "Centrality interval ;#it{p}_{T} (GeV/#it{c});"
                                     f"{part_label} efficiency #times acceptance")
                 canv.cd().SetLogy()
-                canv.cd().SetGridX()
-                canv.cd().SetGridY()
                 heff_p.Draw("same")
                 heff_np.Draw("same")
                 leg.Draw()
@@ -520,7 +499,7 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
                 canv.Modified()
                 canv.Update()
                 
-                canv.SaveAs(os.path.join(outpath, f"{part_name}_efficiency_{cent_label}{suffix}.pdf"))
+                canv.SaveAs(os.path.join(outpath, f"{part_name}_efficiency{cent_label}{suffix}.pdf"))
                 canv_ratio = ROOT.TCanvas(f"cratio{part_name}", "", 500, 500)
                 canv_ratio.Divide(3, 2)
                 canv_ratio.cd().DrawFrame(0., 0.5, pt_bins[-1], 1.5,
@@ -530,7 +509,7 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
                 if coll_system == 'PbPb': latex.DrawLatex(0.2, 0.2, f'Centrality {cent_min} - {cent_max}')
                 canv_ratio.Modified()
                 canv_ratio.Update()
-                if plot_full: canv_ratio.SaveAs(os.path.join(outpath, f"{part_name}_efficiency_ratio_{cent_label}{suffix}.pdf"))
+                if plot_full: canv_ratio.SaveAs(os.path.join(outpath, f"{part_name}_efficiency_ratio{cent_label}{suffix}.pdf"))
 
     h_ass, h_nonass, h_assgood, h_assgood_amb, \
         h_eff_ass, h_eff_assgood, h_eff_assgood_wamb = (
