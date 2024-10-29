@@ -50,6 +50,8 @@ process_input_dir() {
     # Step 3: Delete the original AnalysisResults file after use
     # rm "$analysis_results_path"
     echo "Processed and saved output for suffix $suffix."
+
+    python3 process_histos.py ./outputs/ allrun.root 
 }
 
 # Loop through each entry in INPUT_DIRS and run each in background
