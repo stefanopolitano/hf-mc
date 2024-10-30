@@ -253,7 +253,7 @@ run_mapping = {
 
 def main(input_dir, output_file, hist_name):
     # Create an output histogram to store the entries
-    output_hist = ROOT.TH1F("output_hist", "N_{ev}^{gen} vs  run; ; N_{ev}^{gen}", 220, 0, 220)  # Adjust bin settings as needed
+    output_hist = ROOT.TH1F("output_hist", "N_{ev}^{gen} vs  run; ; N_{ev}^{gen}", 242, 0, 242)  # Adjust bin settings as needed
     output_hist.SetLineWidth(2)
     output_hist.SetLineColor(ROOT.kAzure+2)
 
@@ -300,11 +300,11 @@ def main(input_dir, output_file, hist_name):
     output_hist.Draw('hist same')  # Draw the histogram on the canvas
 
     # Add a LaTeX label with the total number of entries
-    latex = ROOT.TLatex()
-    latex.SetNDC()  # Set coordinates in normalized device coordinates (0 to 1)
-    latex.SetTextSize(0.03)
-    latex.SetTextAlign(13)  # Align at the top left
-    latex.DrawLatex(0.15, 0.85, f"#splitline{{Total generated events:}}{{{int(output_hist.Integral()):,}}}")
+    #latex = ROOT.TLatex()
+    #latex.SetNDC()  # Set coordinates in normalized device coordinates (0 to 1)
+    #latex.SetTextSize(0.03)
+    #latex.SetTextAlign(13)  # Align at the top left
+    #latex.DrawLatex(0.15, 0.85, f"#splitline{{Total generated events:}}{{{int(output_hist.Integral()):,}}}")
 
     canvas.Update()
 
