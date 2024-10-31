@@ -39,7 +39,6 @@ decay_labels_baryons = part_labels[nmesons:]  # Baryon decays
 plot = [True] * len(part_names)
 
 pt_bins = np.array([0., 1., 2., 3., 4., 5., 6., 8., 10., 12., 16., 24., 36, 50.])
-cent_bins = [0., 110]
 
 #origin_labels = ["fake", "light", "charm", "beauty"]
 origin_labels = []
@@ -107,6 +106,7 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
     if event_type == "c":
         ev_tag = "_charm"
 
+    cent_bins = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
     if coll_system == 'pp':
         cent_bins = [0, 110] # default value in pp is 105
     ncent_bins = len(cent_bins) -1
