@@ -11,6 +11,7 @@ file_paths = [
 particle_data = [
     ("DzeroToKPi", "D^{0}#rightarrow K#pi"),
     ("DplusToPiKPi", "D^{+}#rightarrow K#pi#pi"),
+    ("DsToPhiPiToKKPi", "D_{s}^{+}#rightarrow#phi#pi#rightarrow KK#pi"),
     ("LcToPKPi", "#Lambda_{c}^{+}#rightarrow pK#pi"),
     # Additional particles can be added here as needed
 ]
@@ -70,6 +71,7 @@ color_palette_nonprompt = [
 ]
 
 outfile = ROOT.TFile("eff_vcent.root", "recreate")
+
 # Loop over mesons
 for meson in particle_data:
     print(f"[info] {meson[0]}")
@@ -80,10 +82,9 @@ for meson in particle_data:
     canvas_ratio = ROOT.TCanvas(
         f"ceffratio_{mes}", ";#it{p}_{T} (GeV/#it{c}); non-prompt/prompt", 600, 600
     )
-    canvas_ratio.cd(1).SetGridy()
-    canvas_ratio.cd(1).SetGridx()
-    canvas_ratio.cd(1).SetLeftMargin(0.2)
-    canvas_ratio.cd(2).SetLeftMargin(0.2)
+    canvas_ratio.cd().SetGridy()
+    canvas_ratio.cd().SetGridx()
+    canvas_ratio.cd().SetLeftMargin(0.2)
 
     # Loop over category (prompt, nonprompt)
     for category in ["prompt", "nonprompt"]:
@@ -94,14 +95,22 @@ for meson in particle_data:
             f"ceff_{category}{mes}",
             ";#it{p}_{T} (GeV/#it{c}); Acc.#times#varepsilon",
             600,
-            800,
+            600,
         )
-        canvas.Divide(1, 2)
-        canvas.cd(1).SetLogy()
-        canvas.cd(1).SetGridy()
-        canvas.cd(1).SetGridx()
-        canvas.cd(1).SetLeftMargin(0.2)
-        canvas.cd(2).SetLeftMargin(0.2)
+        canvas.cd().SetLogy()
+        canvas.cd().SetGridy()
+        canvas.cd().SetGridx()
+        canvas.cd().SetLeftMargin(0.2)
+
+        canvas_bottom = ROOT.TCanvas(
+            f"ceff_{category}{mes}_ratio",
+            ";#it{p}_{T} (GeV/#it{c}); Acc.#times#varepsilon",
+            600,
+            600,
+        )
+        canvas_bottom.cd().SetGridy()
+        canvas_bottom.cd().SetGridx()
+        canvas_bottom.cd().SetLeftMargin(0.2)
 
         legend = ROOT.TLegend(0.6, 0.3, 0.85, 0.6)
         legend.SetNColumns(2)
@@ -143,7 +152,7 @@ for meson in particle_data:
             heff.SetMarkerSize(1.5)
             heff.SetLineWidth(1)
 
-            canvas.cd(1)
+            canvas.cd()
             heff.Draw("P SAME")
             hratio.append(heff)
             legend.AddEntry(heff, f"{centrality.replace('_', '-')}%", "p")
@@ -182,10 +191,17 @@ for meson in particle_data:
             canvas_ratio.SaveAs(f"{mes}meson_efficiencyratio_comparison.pdf")
             canvas_ratio.Write()
 
-        canvas.cd(2)
-        canvas.cd(2).SetGridy()
-        canvas.cd(2).SetGridx()
+        legend.Draw()
+        canvas.Draw()
+        canvas.SaveAs(f"{category}{mes}meson_efficiency_comparison.pdf")
+        canvas.Write()
+
+        canvas_bottom.cd()
+        canvas_bottom.cd().SetGridy()
+        canvas_bottom.cd().SetGridx()
+
         h_ratio = []
+
         for ih, (h) in enumerate(hratio):
             h_ratio.append(
                 h.Clone(f"h_ratio_{category}{mes}_{centralities[ih]}_over_0_10")
@@ -201,13 +217,12 @@ for meson in particle_data:
             h.Draw("P SAME")
             h.Write()
 
-        canvas.cd(1)
-        legend.Draw()
+        canvas_bottom.Draw()
+        canvas_bottom.SaveAs(f"{category}{mes}meson_efficiencyratio_comparison.pdf")
+        canvas_bottom.Write()
+
         del hratio
 
-        canvas.Draw()
-        canvas.SaveAs(f"{category}{mes}meson_efficiency_comparison.pdf")
-        canvas.Write()
 
 outfile.Close()
-print('[info] Done!')
+print("[info] Done!")
