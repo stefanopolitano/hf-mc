@@ -107,9 +107,10 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
         ev_tag = "_charm"
 
     cent_bins = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+    occ_bins = [0, 2000, 4000, 999999]
     if coll_system == 'pp':
         cent_bins = [0, 110] # default value in pp is 105
-    ncent_bins = len(cent_bins) -1
+        occ_bins = [0, 999999]
 
     ev_tag = ""
     outpath += ev_tag
@@ -137,8 +138,12 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
         f"{task_gen_name}/NonPromptCharmMesons/hNonPromptMesonsPtDistr")
     h_pt_vcent_gen_prompt_meson_vshad = infile.Get(
         f"{task_gen_name}/PromptCharmMesons/hPromptMesonsPtCentDistr")
+    h_pt_vocc_gen_prompt_meson_vshad = infile.Get(
+        f"{task_gen_name}/PromptCharmMesons/hPromptMesonsPtOccDistr")
     h_pt_vcent_gen_nonprompt_meson_vshad = infile.Get(
         f"{task_gen_name}/NonPromptCharmMesons/hNonPromptMesonsPtCentDistr")
+    h_pt_vocc_gen_nonprompt_meson_vshad = infile.Get(
+        f"{task_gen_name}/NonPromptCharmMesons/hNonPromptMesonsPtOccDistr")
     h_y_gen_prompt_meson_vshad = infile.Get(
         f"{task_gen_name}/PromptCharmMesons/hPromptMesonsYDistr")
     h_y_gen_nonprompt_meson_vshad = infile.Get(
@@ -153,8 +158,12 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
         f"{task_gen_name}/NonPromptCharmBaryons/hNonPromptBaryonsPtDistr")
     h_pt_vcent_gen_prompt_baryon_vshad = infile.Get(
         f"{task_gen_name}/PromptCharmBaryons/hPromptBaryonsPtCentDistr")
+    h_pt_vocc_gen_prompt_baryon_vshad = infile.Get(
+        f"{task_gen_name}/PromptCharmBaryons/hPromptBaryonsPtOccDistr")
     h_pt_vcent_gen_nonprompt_baryon_vshad = infile.Get(
         f"{task_gen_name}/NonPromptCharmBaryons/hNonPromptBaryonsPtCentDistr")
+    h_pt_vocc_gen_nonprompt_baryon_vshad = infile.Get(
+        f"{task_gen_name}/NonPromptCharmBaryons/hNonPromptBaryonsPtOccDistr")
     h_y_gen_prompt_baryon_vshad = infile.Get(
         f"{task_gen_name}/PromptCharmBaryons/hPromptBaryonsYDistr")
     h_y_gen_nonprompt_baryon_vshad = infile.Get(
@@ -167,6 +176,8 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
     h_pt_gen_nonprompt_meson_vshad.SetDirectory(0)
     h_pt_vcent_gen_prompt_meson_vshad.SetDirectory(0)
     h_pt_vcent_gen_nonprompt_meson_vshad.SetDirectory(0)
+    h_pt_vocc_gen_prompt_meson_vshad.SetDirectory(0)
+    h_pt_vocc_gen_nonprompt_meson_vshad.SetDirectory(0)
     h_y_gen_prompt_meson_vshad.SetDirectory(0)
     h_y_gen_nonprompt_meson_vshad.SetDirectory(0)
     h_declen_gen_prompt_meson_vshad.SetDirectory(0)
@@ -175,6 +186,8 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
     h_pt_gen_nonprompt_baryon_vshad.SetDirectory(0)
     h_pt_vcent_gen_prompt_baryon_vshad.SetDirectory(0)
     h_pt_vcent_gen_nonprompt_baryon_vshad.SetDirectory(0)
+    h_pt_vocc_gen_prompt_baryon_vshad.SetDirectory(0)
+    h_pt_vocc_gen_nonprompt_baryon_vshad.SetDirectory(0)
     h_y_gen_prompt_baryon_vshad.SetDirectory(0)
     h_y_gen_nonprompt_baryon_vshad.SetDirectory(0)
     h_declen_gen_prompt_baryon_vshad.SetDirectory(0)
@@ -256,11 +269,14 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
     # efficiencies mesons
     h_pt_reco_prompt, h_pt_reco_nonprompt = {}, {}
     h_pt_vcent_reco_prompt, h_pt_vcent_reco_nonprompt = {}, {}
+    h_pt_vocc_reco_prompt, h_pt_vocc_reco_nonprompt = {}, {}
     h_pt_gen_prompt, h_pt_gen_nonprompt = [], []
     h_pt_vcent_gen_prompt, h_pt_vcent_gen_nonprompt = {}, {}
+    h_pt_vocc_gen_prompt, h_pt_vocc_gen_nonprompt = {}, {}
     h_y_gen_prompt, h_y_gen_nonprompt = [], []
     h_declen_gen_prompt, h_declen_gen_nonprompt = [], []
     h_eff_prompt, h_eff_nonprompt, h_eff_ratio = [], [], []
+    h_effocc_prompt, h_effocc_nonprompt, h_effocc_ratio = [], [], []
 
     leg = ROOT.TLegend(0.6, 0.3, 0.9, 0.4)
     leg.SetTextSize(0.045)
@@ -274,6 +290,8 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
             h_pt_gen_np_hadron = h_pt_gen_nonprompt_meson_vshad
             h_pt_vcent_gen_p_hadron = h_pt_vcent_gen_prompt_meson_vshad
             h_pt_vcent_gen_np_hadron = h_pt_vcent_gen_nonprompt_meson_vshad
+            h_pt_vocc_gen_p_hadron = h_pt_vocc_gen_prompt_meson_vshad
+            h_pt_vocc_gen_np_hadron = h_pt_vocc_gen_nonprompt_meson_vshad            
             h_y_gen_p_hadron = h_y_gen_prompt_meson_vshad
             h_y_gen_np_hadron = h_y_gen_nonprompt_meson_vshad
             h_dl_gen_p_hadron = h_declen_gen_prompt_meson_vshad
@@ -284,6 +302,8 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
             h_pt_gen_np_hadron = h_pt_gen_nonprompt_baryon_vshad
             h_pt_vcent_gen_p_hadron = h_pt_vcent_gen_prompt_baryon_vshad
             h_pt_vcent_gen_np_hadron = h_pt_vcent_gen_nonprompt_baryon_vshad
+            h_pt_vocc_gen_p_hadron = h_pt_vocc_gen_prompt_baryon_vshad
+            h_pt_vocc_gen_np_hadron = h_pt_vocc_gen_nonprompt_baryon_vshad
             h_y_gen_p_hadron = h_y_gen_prompt_baryon_vshad
             h_y_gen_np_hadron = h_y_gen_nonprompt_baryon_vshad
             h_dl_gen_p_hadron = h_declen_gen_prompt_baryon_vshad
@@ -297,20 +317,27 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
         h_pt_gen_prompt[ipart].Sumw2()
         h_pt_gen_nonprompt[ipart].Sumw2()
 
-        h_pt_vcent_gen_prompt[part_name] = []
-        h_pt_vcent_gen_nonprompt[part_name] = []
+        h_pt_vcent_gen_prompt[part_name], h_pt_vcent_gen_nonprompt[part_name], h_pt_vocc_gen_prompt[part_name], h_pt_vocc_gen_nonprompt[part_name] = ([] for i in range(4))
 
         h_pt_vcent_gen_p_hadron.GetXaxis().SetRangeUser(iproj-1, iproj-1)
         h_pt_vcent_gen_np_hadron.GetXaxis().SetRangeUser(iproj-1, iproj-1)
+        h_pt_vocc_gen_p_hadron.GetXaxis().SetRangeUser(iproj-1, iproj-1)
+        h_pt_vocc_gen_np_hadron.GetXaxis().SetRangeUser(iproj-1, iproj-1)
 
         h_pt_vcent_gen_prompt[part_name] = h_pt_vcent_gen_p_hadron.Project3D('zy')
         h_pt_vcent_gen_nonprompt[part_name] = h_pt_vcent_gen_np_hadron.Project3D('zy')
+        h_pt_vocc_gen_prompt[part_name] = h_pt_vocc_gen_p_hadron.Project3D('zy')
+        h_pt_vocc_gen_nonprompt[part_name] = h_pt_vocc_gen_np_hadron.Project3D('zy')
 
         h_pt_vcent_gen_prompt[part_name].SetName(f"h_pt_vcent_gen_prompt{part_name}")
         h_pt_vcent_gen_nonprompt[part_name].SetName(f"h_pt_vcent_gen_nonprompt{part_name}")
+        h_pt_vocc_gen_prompt[part_name].SetName(f"h_pt_vocc_gen_prompt{part_name}")
+        h_pt_vocc_gen_nonprompt[part_name].SetName(f"h_pt_vocc_gen_nonprompt{part_name}")
 
         h_pt_vcent_gen_prompt[part_name].Sumw2()
         h_pt_vcent_gen_nonprompt[part_name].Sumw2()
+        h_pt_vocc_gen_prompt[part_name].Sumw2()
+        h_pt_vocc_gen_nonprompt[part_name].Sumw2()
 
         h_y_gen_prompt.append(h_y_gen_p_hadron.ProjectionY(
             f"h_y_gen_prompt{part_name}", iproj, iproj))
@@ -406,12 +433,18 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
         print(f"Processing {part_name}")
         h_pt_vcent_reco_prompt[part_name] = infile.Get(f"{task_rec_name}/{part_name}/histPtCentRecoPrompt")
         h_pt_vcent_reco_nonprompt[part_name] = infile.Get(f"{task_rec_name}/{part_name}/histPtCentRecoNonPrompt")
+        h_pt_vocc_reco_prompt[part_name] = infile.Get(f"{task_rec_name}/{part_name}/histPtOccRecoPrompt")
+        h_pt_vocc_reco_nonprompt[part_name] = infile.Get(f"{task_rec_name}/{part_name}/histPtOccRecoNonPrompt")
         h_eff_prompt.append([])
         h_eff_nonprompt.append([])
         h_eff_ratio.append([])
+        h_effocc_prompt.append([]) # occupancy specific
+        h_effocc_nonprompt.append([])
+        h_effocc_ratio.append([])
 
         # in PbPb, efficiency vs centrality
         if coll_system == 'PbPb':
+            # Centrality study
             # First entry 0-100% centrality
             h_eff_prompt[ipart].append(compute_eff_vcent(h_pt_vcent_gen_prompt[part_name],
                                                   h_pt_vcent_reco_prompt[part_name],
@@ -447,6 +480,45 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
                 set_style(h_eff_prompt[ipart][-1])
                 set_style(h_eff_nonprompt[ipart][-1], 'fd')
                 set_style(h_eff_ratio[ipart][-1], '')
+
+
+            # Occupancy study
+            # First entry occupancy integrated
+            h_effocc_prompt[ipart].append(compute_eff_vcent(h_pt_vocc_gen_prompt[part_name],
+                                                  h_pt_vocc_reco_prompt[part_name],
+                                                  0, 999999))
+            h_effocc_nonprompt[ipart].append(compute_eff_vcent(h_pt_vocc_gen_nonprompt[part_name],
+                                                     h_pt_vocc_reco_nonprompt[part_name],
+                                                     0, 99999))
+            h_effocc_prompt[ipart][-1].SetName(f"h_effocc_prompt{part_name}vocc0_99999")
+            h_effocc_nonprompt[ipart][-1].SetName(f"h_effocc_nonprompt{part_name}vocc0_99999")
+            h_effocc_ratio[ipart].append(h_effocc_nonprompt[ipart][-1].Clone(f"h_effocc_ratio{part_name}vocc0_99999"))
+            if h_effocc_prompt[ipart][-1].GetEntries() != 0:
+                h_effocc_ratio[ipart][-1].Divide(h_effocc_prompt[ipart][-1])
+            h_effocc_ratio[ipart][-1].SetTitle(";#it{p}_{T} (GeV/#it{c});non-prompt / prompt")
+
+            set_style(h_effocc_prompt[ipart][-1])
+            set_style(h_effocc_nonprompt[ipart][-1], 'fd')
+            set_style(h_effocc_ratio[ipart][-1], '')
+
+            for _, (cent_min, cent_max) in enumerate(zip(occ_bins[:-1], occ_bins[1:])):
+                h_effocc_prompt[ipart].append(compute_eff_vcent(h_pt_vocc_gen_prompt[part_name],
+                                                      h_pt_vocc_reco_prompt[part_name],
+                                                      cent_min, cent_max))
+                h_effocc_nonprompt[ipart].append(compute_eff_vcent(h_pt_vocc_gen_nonprompt[part_name],
+                                                      h_pt_vocc_reco_nonprompt[part_name],
+                                                      cent_min, cent_max))
+                h_effocc_prompt[ipart][-1].SetName(f"h_effocc_prompt{part_name}vcent{cent_min}_{cent_max}")
+                h_effocc_nonprompt[ipart][-1].SetName(f"h_effocc_nonprompt{part_name}vcent{cent_min}_{cent_max}")
+                h_effocc_ratio[ipart].append(h_effocc_nonprompt[ipart][-1].Clone(f"h_effocc_ratio{part_name}vcent{cent_min}_{cent_max}"))
+                if h_effocc_prompt[ipart][-1].GetEntries() != 0:
+                    h_effocc_ratio[ipart][-1].Divide(h_effocc_prompt[ipart][-1])
+                h_effocc_ratio[ipart][-1].SetTitle(";#it{p}_{T} (GeV/#it{c});non-prompt / prompt")
+
+                set_style(h_effocc_prompt[ipart][-1])
+                set_style(h_effocc_nonprompt[ipart][-1], 'fd')
+                set_style(h_effocc_ratio[ipart][-1], '')
+
         # pp
         else:
             h_eff_prompt[ipart].append(compute_eff_vcent(h_pt_vcent_gen_prompt[part_name],
@@ -467,6 +539,7 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
             set_style(h_eff_ratio[ipart][-1], '')
 
         if plot[ipart]:
+            # Plot efficency (integrated if pp, vs cent if PbPb)
             for ihisto, (heff_p, heff_np, heff_ratio) in enumerate(zip(h_eff_prompt[ipart],
                                                                        h_eff_nonprompt[ipart],
                                                                        h_eff_ratio[ipart])):
@@ -510,6 +583,53 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
                 canv_ratio.Modified()
                 canv_ratio.Update()
                 if plot_full: canv_ratio.SaveAs(os.path.join(outpath, f"{part_name}_efficiency_ratio{cent_label}{suffix}.pdf"))
+
+            if coll_system == 'PbPb':
+                # Plot efficency vs occ (only PbPb)
+                for ihisto, (heff_p, heff_np, heff_ratio) in enumerate(zip(h_effocc_prompt[ipart],
+                                                                           h_effocc_nonprompt[ipart],
+                                                                           h_effocc_ratio[ipart])):
+
+                    if (heff_p.GetEntries() == 0 or heff_np.GetEntries() == 0):
+                        continue
+
+                    print(len(h_effocc_prompt[ipart]))
+                    if ihisto == 0:
+                        occ_min = 0
+                        occ_max = 99999
+                    else:
+                        occ_min = occ_bins[ihisto-1]
+                        occ_max = occ_bins[ihisto]
+                    occ_label = f'_vocc{occ_min}_{occ_max}'
+
+                    canv = ROOT.TCanvas(f"c{part_name}{occ_label}", "", 500, 500)
+                    canv.cd().SetGridy()
+                    canv.cd().SetGridx()
+                    canv.cd().DrawFrame(1.e-10,
+                                        max(min(heff_p.GetMinimum(), heff_np.GetMinimum()), 1.e-5) * 0.5,
+                                        pt_bins[-1],
+                                        1.5,
+                                        "Occupancy interval ;#it{p}_{T} (GeV/#it{c});"
+                                        f"{part_label} efficiency #times acceptance")
+                    canv.cd().SetLogy()
+                    heff_p.Draw("same")
+                    heff_np.Draw("same")
+                    leg.Draw()
+                    if coll_system == 'PbPb': latex.DrawLatex(0.2, 0.2, f'Occupancy {occ_min} - {occ_max}')
+                    canv.Modified()
+                    canv.Update()
+
+                    canv.SaveAs(os.path.join(outpath, f"{part_name}_efficiency{occ_label}{suffix}.pdf"))
+                    canv_ratio = ROOT.TCanvas(f"cratio{part_name}", "", 500, 500)
+                    canv_ratio.Divide(3, 2)
+                    canv_ratio.cd().DrawFrame(0., 0.5, pt_bins[-1], 1.5,
+                                              ";#it{p}_{T} (GeV/#it{c});"
+                                              f"{part_label} non-prompt / prompt")
+                    heff_ratio.Draw("same")
+                    if coll_system == 'PbPb': latex.DrawLatex(0.2, 0.2, f'Occupancy {occ_min} - {occ_max}')
+                    canv_ratio.Modified()
+                    canv_ratio.Update()
+                    if plot_full: canv_ratio.SaveAs(os.path.join(outpath, f"{part_name}_efficiency_ratio{occ_label}{suffix}.pdf"))
 
     h_ass, h_nonass, h_assgood, h_assgood_amb, \
         h_eff_ass, h_eff_assgood, h_eff_assgood_wamb = (
@@ -911,8 +1031,8 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
         outpath, f"correlation_number_beauty_radius_collisions_samebc{suffix}.pdf"))
     
     output = ROOT.TFile(os.path.join(outpath, f"QA_output{suffix}.root"), "recreate")
-    dir_distr = output.mkdir("gen-distr")
-    dir_distr.cd()
+    dir_gen_distr = output.mkdir("gen-distr")
+    dir_gen_distr.cd()
     h_abundances_promptmeson.Write()
     h_abundances_nonpromptmeson.Write()
     for hist in h_pt_gen_prompt:
@@ -943,6 +1063,16 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
     for part in h_eff_ratio:
         for hist in part:
             hist.Write()
+    for part in h_effocc_prompt:
+        for hist in part:
+            hist.Write()
+    for part in h_effocc_nonprompt:
+        for hist in part:
+            hist.Write()
+    for part in h_effocc_ratio:
+        for hist in part:
+            hist.Write()
+    
     output.cd()
     dir_pv = output.mkdir("pv")
     dir_pv.cd()

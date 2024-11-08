@@ -42,9 +42,9 @@ def get_empty_clone(hist):
 
 # Define file paths and particle information
 file_paths = [
-    "/home/spolitan/alice/analyses/hf-mc/postprocess/outputs/HF_LHC24g2_Small_2P3PDstar_020_train278233/QA_output_HF_LHC24g2_Small_2P3PDstar_020_train278233.root",
-    "/home/spolitan/alice/analyses/hf-mc/postprocess/outputs/HF_LHC24g2_Small_2P3PDstar_2050_train284725/QA_output_HF_LHC24g2_Small_2P3PDstar_2050_train284725.root",
-    "/home/spolitan/alice/analyses/hf-mc/postprocess/outputs/HF_LHC24g2_Small_2P3PDstar_50100_train284513/QA_output_HF_LHC24g2_Small_2P3PDstar_50100_train284513.root",
+    "/home/spolitan/alice/analyses/hf-mc/postprocess/outputs/HF_LHC24g2_Small_2P3PDstar_020_train289014/QA_output_HF_LHC24g2_Small_2P3PDstar_020_train289014.root",
+    "/home/spolitan/alice/analyses/hf-mc/postprocess/outputs/HF_LHC24g2_Small_2P3PDstar_2050_train288969/QA_output_HF_LHC24g2_Small_2P3PDstar_2050_train288969.root",
+    "/home/spolitan/alice/analyses/hf-mc/postprocess/outputs/HF_LHC24g2_Small_2P3PDstar_50100_train288635/QA_output_HF_LHC24g2_Small_2P3PDstar_50100_train288635.root",
 ]
 
 # Define particle speceis to be analysed
@@ -242,14 +242,14 @@ for meson in particle_data:
             canvas_npvp_ratio.cd()
             #legend.Draw()
             #leg_empty.Draw()
-            canvas_npvp_ratio.SaveAs(f"{mes}meson_efficiencyratio_comparison.pdf")
+            canvas_npvp_ratio.SaveAs(f"{mes}meson_efficiencyratio_comparison.jpg")
             canvas_npvp_ratio.Write()
 
         canvas.cd()
         legend.Draw()
         leg_empty.Draw()
         canvas.Draw()
-        canvas.SaveAs(f"{category}{mes}meson_efficiency_comparison.pdf")
+        canvas.SaveAs(f"{category}{mes}meson_efficiency_comparison.jpg")
         canvas.Write()
 
         canvas_cent_ratio.cd()
@@ -276,7 +276,7 @@ for meson in particle_data:
             hratio.Write()
 
         canvas_cent_ratio.Draw()
-        canvas_cent_ratio.SaveAs(f"{category}{mes}meson_efficiencyratio_comparison.pdf")
+        canvas_cent_ratio.SaveAs(f"{category}{mes}meson_efficiencyratio_comparison.jpg")
         canvas_cent_ratio.Write()
 
         del hratio
