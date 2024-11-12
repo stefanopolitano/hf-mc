@@ -1,0 +1,5 @@
+Input size: 22.86 MB
+Global runtime: 1523.001 s
+------------------------------------
+Expected running time: 28.203712294512 days @ 10kCPU
+Expected size: 45.72 TB
