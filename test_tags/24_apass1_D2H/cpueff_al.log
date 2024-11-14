@@ -1,0 +1,9 @@
+<--- Extracted resource summary from file  /home/spolitan/alice/analyses/hf-mc/test_tags/24_apass1_D2H/pipeline_metrical.log
+Iterations:  267.0
+Estimated runtime (s):  1335.0
+Mean-PSS (MB):  3862.4067547401687
+Max-PSS (MB):  13872.4287109375
+Mean-CPU (cores):  5.053992509363296
+Max-CPU (cores):  16.187
+CPU-efficiency:  0.631749063670412
+---> 

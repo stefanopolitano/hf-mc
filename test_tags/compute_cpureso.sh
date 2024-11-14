@@ -1,0 +1,1 @@
+python3 o2dpg_sim_metrics.py stat -p /home/spolitan/alice/analyses/hf-mc/test_tags/24_apass1_D2H/pipeline_metricam.log > cpueff_am.log
