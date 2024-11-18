@@ -5,11 +5,13 @@
 # Define default parameters
 TARGET_DIR="./inputs/"
 OUTPUT_DIR="./outputs/"
-INPUT_DIRS=("/alice/cern.ch/user/a/alihyperloop/jobs/0079/hy_795848")
-SUFFIXES=("HF_LHC24g2_Small_2P3PDstar_020_train278233")
+INPUT_DIRS=("/alice/cern.ch/user/a/alihyperloop/outputs/0029/293900/49793")
+SUFFIXES=("HF_LHC24h2_All_train293900")
 FILES_TO_MERGE=("AnalysisResults")
 CURRENT_DIR=$(pwd)
-SYSTEM=PbPb
+SYSTEM=pp
+OLDER_MC="outputs/HF_LHC24h2_All_train293900/QA_output_HF_LHC24h2_All_train293900.root" # optional: one can provide a list of QA file to be compared
+MC_LABLES="h2 h2" # optional: if OLDER_MC is provided, one has to provide a label for each MC and the first one must be the current one
 
 # Submit the Python script with the provided arguments
 python3 download.py \
@@ -76,4 +78,11 @@ if [ -n "$COLLISIONS_PDFS" ]; then
     echo "Merged collisions PDFs into $MERGED_PDF"
 else
     echo "No collisions PDF files found to merge."
+fi
+
+
+if [ -n "$OLDER_MC" ]; then
+    # Compare QA files
+    echo "Compare QA files"
+    python3 compare_qa_mc_val.py -i $OUTPUT_DIR/QA_output_$SUFFIXES.root $OLDER_MC -l $MC_LABLES -o $OUTPUT_DIR  
 fi

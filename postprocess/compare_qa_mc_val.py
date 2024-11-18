@@ -37,11 +37,12 @@ def compare(infiles, labels, outdir):
     colors = [ROOT.kRed+2, ROOT.kRed-6, ROOT.kOrange-1,
               ROOT.kSpring, ROOT.kTeal-1, ROOT.kViolet+3,
               ROOT.kAzure+6, ROOT.kBlue+2 , ROOT.kCyan+4]
-              
+       
     markers = [ROOT.kFullCircle, ROOT.kFullSquare, ROOT.kFullDiamond,
                ROOT.kFullTriangleUp, ROOT.kFullCross, ROOT.kOpenCircle,
                ROOT.kOpenSquare, ROOT.kOpenDiamond, ROOT.kOpenTriangleUp]
-    
+    hadrons = ["DzeroToKPi", "DplusToPiKPi", "LcToPKPi"]
+
     try:
         os.makedirs(outdir)
     except FileExistsError:
@@ -50,6 +51,8 @@ def compare(infiles, labels, outdir):
     n_files = len(infiles)
     if len(labels) < n_files:
         labels = ["" for _ in range(n_files)]
+    print(f'Number of provided files: {n_files}')
+    print(f'Lables: {labels}')
 
     hist_reco_coll_eff = ROOT.TH1F(
         "hist_reco_coll_eff", ";;reco collisions / gen collisions", n_files, -0.5, n_files-0.5)
@@ -63,6 +66,7 @@ def compare(infiles, labels, outdir):
     h_frac_amb, h_eff_amb = [], []
     for i_file, (infile_name, color, marker) in enumerate(
             zip(infiles, colors[:n_files], markers[:n_files])):
+        print(f'Comparing {infile_name}')
         infile = ROOT.TFile.Open(infile_name)
 
         h_collisions = infile.Get("pv/h_collisions")
@@ -71,33 +75,19 @@ def compare(infiles, labels, outdir):
         hist_reco_coll_eff.SetBinContent(i_file+1, eff)
         hist_reco_coll_eff.SetBinError(i_file+1, err_eff)
 
-        h_ntracks.append(infile.Get("pv/h_ntracks"))
-        set_obj_style(h_ntracks[i_file], color, marker)
-        h_ntracks[i_file].Scale(1./h_ntracks[i_file].Integral())
-
         h_prompt_eff.append({})
         h_nonprompt_eff.append({})
         h_ratio_eff.append({})
-        for had in ["DzeroToKPi", "DplusToPiKPi", "LcToPKPi"]:
+        for had in hadrons:
             h_prompt_eff[i_file][had] = infile.Get(
-                f"efficiencies/h_eff_prompt{had}")
+                f"efficiencies/h_eff_prompt{had}vcent0_110")
             h_nonprompt_eff[i_file][had] = infile.Get(
-                f"efficiencies/h_eff_nonprompt{had}")
+                f"efficiencies/h_eff_nonprompt{had}vcent0_110")
             h_ratio_eff[i_file][had] = infile.Get(
-                f"efficiencies/h_eff_ratio{had}")
+                f"efficiencies/h_eff_ratio{had}vcent0_110")
             set_obj_style(h_prompt_eff[i_file][had], color, marker)
             set_obj_style(h_nonprompt_eff[i_file][had], color, marker)
             set_obj_style(h_ratio_eff[i_file][had], color, marker)
-
-        h_frac_amb.append({})
-        h_eff_amb.append({})
-        for orig in ["light", "charm", "beauty"]:
-            h_frac_amb[i_file][orig] = infile.Get(
-                f"pv-association/h_fracanv_amb_per_origin_{orig}")
-            h_eff_amb[i_file][orig] = infile.Get(
-                f"pv-association/h_eff_assgood_{orig}")
-            set_obj_style(h_frac_amb[i_file][orig], color, marker)
-            set_obj_style(h_eff_amb[i_file][orig], color, marker)
 
     line_at_unity = ROOT.TLine(0., 1., 10., 1.)
     line_at_unity.SetLineColor(ROOT.kGray+1)
@@ -131,7 +121,7 @@ def compare(infiles, labels, outdir):
     had_labels = ["D^{0}", "D^{#plus}", "#Lambda_{c}^{#plus}"]
     c_eff_prompt = ROOT.TCanvas("c_eff_prompt", "", 1800, 1200)
     c_eff_prompt.Divide(3, 2)
-    for i_had, had in enumerate(["DzeroToKPi", "DplusToPiKPi", "LcToPKPi"]):
+    for i_had, had in enumerate(hadrons):
         c_eff_prompt.cd(i_had+1).DrawFrame(0., 5.e-2,
                                            h_prompt_eff[-1][had].GetXaxis().GetBinUpEdge(
                                                h_prompt_eff[-1][had].GetNbinsX()), 1.6,
@@ -157,7 +147,7 @@ def compare(infiles, labels, outdir):
 
     c_eff_nonprompt = ROOT.TCanvas("c_eff_nonprompt", "", 1800, 1200)
     c_eff_nonprompt.Divide(3, 2)
-    for i_had, had in enumerate(["DzeroToKPi", "DplusToPiKPi", "LcToPKPi"]):
+    for i_had, had in enumerate(hadrons):
         c_eff_nonprompt.cd(i_had+1).DrawFrame(0., 5.e-2,
                                               h_nonprompt_eff[-1][had].GetXaxis().GetBinUpEdge(
                                                   h_nonprompt_eff[-1][had].GetNbinsX()), 1.6,
@@ -183,7 +173,7 @@ def compare(infiles, labels, outdir):
 
     c_eff_ratio = ROOT.TCanvas("c_eff_ratio", "", 1800, 1200)
     c_eff_ratio.Divide(3, 2)
-    for i_had, had in enumerate(["DzeroToKPi", "DplusToPiKPi", "LcToPKPi"]):
+    for i_had, had in enumerate(hadrons):
         c_eff_ratio.cd(i_had+1).DrawFrame(0., 0.,
                                           h_ratio_eff[-1][had].GetXaxis().GetBinUpEdge(
                                               h_ratio_eff[-1][had].GetNbinsX()), 2.,
@@ -207,57 +197,11 @@ def compare(infiles, labels, outdir):
     c_eff_ratio.Modified()
     c_eff_ratio.Update()
 
-    c_frac_ambiguous = ROOT.TCanvas("c_frac_ambiguous", "", 1800, 1200)
-    c_frac_ambiguous.Divide(3, 2)
-    for i_orig, orig in enumerate(["light", "charm", "beauty"]):
-        c_frac_ambiguous.cd(i_orig+1).DrawFrame(0., 1.e-3, 10., 1.,
-                                                f";#it{{p}}_{{T}} (GeV/#it{{c}}); fraction of ambiguous tracks ({orig})")
-        c_frac_ambiguous.cd(i_orig+1).SetLogy()
-        for i_file in range(n_files):
-            h_frac_amb[i_file][orig].Draw("same")
-        if i_orig == 0:
-            leg.Draw()
-        c_frac_ambiguous.cd(i_orig+4).DrawFrame(0., 0.6, 10., 1.4,
-                                                f";#it{{p}}_{{T}} (GeV/#it{{c}}); ratio to {labels[0]}")
-        for i_file in range(1, n_files):
-            hist_ratio = h_frac_amb[i_file][orig].Clone(
-                f"h_frac_amb{orig}_{i_file}")
-            hist_ratio.Divide(h_frac_amb[0][orig])
-            hist_ratio.GetYaxis().SetDecimals()
-            hist_ratio.DrawCopy("same")
-        line_at_unity.Draw()
-    c_frac_ambiguous.Modified()
-    c_frac_ambiguous.Update()
-
-    c_eff_ambiguous = ROOT.TCanvas("c_eff_ambiguous", "", 1800, 1200)
-    c_eff_ambiguous.Divide(3, 2)
-    for i_orig, orig in enumerate(["light", "charm", "beauty"]):
-        c_eff_ambiguous.cd(i_orig+1).DrawFrame(0., 0., 10., 1.,
-                                               f";#it{{p}}_{{T}} (GeV/#it{{c}}); tracks w/ collision / tracks w/ good collision ({orig})")
-        for i_file in range(n_files):
-            h_eff_amb[i_file][orig].Draw("same")
-        if i_orig == 0:
-            leg.Draw()
-        c_eff_ambiguous.cd(i_orig+4).DrawFrame(0., 0.8, 10., 1.2,
-                                               f";#it{{p}}_{{T}} (GeV/#it{{c}}); ratio to {labels[0]}")
-        for i_file in range(1, n_files):
-            hist_ratio = h_eff_amb[i_file][orig].Clone(
-                f"h_eff_amb{orig}_{i_file}")
-            hist_ratio.Divide(h_eff_amb[0][orig])
-            hist_ratio.GetYaxis().SetDecimals()
-            hist_ratio.DrawCopy("same")
-        line_at_unity.Draw()
-    c_eff_ambiguous.Modified()
-    c_eff_ambiguous.Update()
-
     c_reco_coll_eff.SaveAs(os.path.join(outdir, "reco_collision_eff.pdf"))
     c_mult.SaveAs(os.path.join(outdir, "mult_distr.pdf"))
     c_eff_prompt.SaveAs(os.path.join(outdir, "prompt_efficiencies.pdf"))
     c_eff_nonprompt.SaveAs(os.path.join(outdir, "nonprompt_efficiencies.pdf"))
     c_eff_ratio.SaveAs(os.path.join(outdir, "ratio_efficiencies.pdf"))
-    c_frac_ambiguous.SaveAs(os.path.join(
-        outdir, "fraction_ambiguous_tracks.pdf"))
-    c_eff_ambiguous.SaveAs(os.path.join(outdir, "efficiency_coll_ass.pdf"))
 
     outfile = ROOT.TFile(os.path.join(
         outdir, "QA_comparison.root"), "recreate")
