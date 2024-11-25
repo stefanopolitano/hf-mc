@@ -1,16 +1,17 @@
 import ROOT
 import os
 
+
 def get_empty_clone(hist):
-    '''
+    """
     Function to get empty clone of an histogram.
 
     Inputs:
         - hist is the hisotgram to copy
     Returns:
         - hclone is the cloned hisotgram
-    '''
-    hclone = hist.Clone(hist.GetName() + '_clone')
+    """
+    hclone = hist.Clone(hist.GetName() + "_clone")
     # obtain empty version of the markerstyle
     mstyle = hist.GetMarkerStyle()
     if mstyle == 33:
@@ -40,6 +41,20 @@ def get_empty_clone(hist):
 
     return hclone
 
+def get_skimmed_cents(centbin):
+    if centbin == 'central':
+        return ["0_10", "10_20"]
+    elif centbin == 'semicentral':
+         return ["20_30",
+                "30_40",
+                "40_50"]
+    elif centbin == 'peripheral':
+        return     ["50_60",
+                    "60_70",
+                    "70_80",
+                    "80_90",
+                    "90_100"]
+
 # Define file paths and particle information
 file_paths = [
     "/home/spolitan/alice/analyses/hf-mc/postprocess/outputs/HF_LHC24g2_Small_2P3PDstar_020_train289014/QA_output_HF_LHC24g2_Small_2P3PDstar_020_train289014.root",
@@ -49,26 +64,21 @@ file_paths = [
 
 # Define particle speceis to be analysed
 particle_data = [
-    ("DzeroToKPi", "D^{0}#rightarrow K#pi", 1.e-2, 3, 3), # channel, label, ymin comparison, ymax cent ratio, ymax np / p ratio
-    ("DplusToPiKPi", "D^{+}#rightarrow K#pi#pi", 1.e-4, 8, 8),
-    ("DsToPhiPiToKKPi", "D_{s}^{+}#rightarrow#phi#pi#rightarrow KK#pi", 1.e-4, 6, 8),
-    ("LcToPKPi", "#Lambda_{c}^{+}#rightarrow pK#pi", 1.e-4, 8, 8)
+    (
+        "DzeroToKPi",
+        "D^{0}#rightarrow K#pi",
+        1.0e-2,
+        3,
+        3,
+    ),  # channel, label, ymin comparison, ymax cent ratio, ymax np / p ratio
+    ("DplusToPiKPi", "D^{+}#rightarrow K#pi#pi", 1.0e-4, 8, 8),
+    ("DsToPhiPiToKKPi", "D_{s}^{+}#rightarrow#phi#pi#rightarrow KK#pi", 1.0e-4, 6, 8),
+    ("LcToPKPi", "#Lambda_{c}^{+}#rightarrow pK#pi", 1.0e-4, 8, 8),
     # Additional particles can be added here as needed
 ]
 
 # Centrality bins
-centralities = [
-    "0_10",
-    "10_20",
-    "20_30",
-    "30_40",
-    "40_50",
-    "50_60",
-    "60_70",
-    "70_80",
-    "80_90",
-    "90_100",
-]
+cent_interval = 'semicentral' # central (0-10, 10-20), semicentral (20-30, 30-40, 40-50), peripheral (50-60, 60-70, 70-80, 80-90, 90-100)
 
 # Define color palettes for prompt (red) and non-prompt (blue)
 marker_styles = [
@@ -86,31 +96,32 @@ marker_styles = [
 
 color_palette_prompt = [
     ROOT.TColor.GetColor("#8A3307"),  # Dark Rust
-    ROOT.TColor.GetColor("#A73D08"),  # Rust
+    #ROOT.TColor.GetColor("#A73D08"),  # Rust
     ROOT.TColor.GetColor("#BF360C"),  # Deep Orange
-    ROOT.TColor.GetColor("#D84315"),  # Burnt Orange
-    ROOT.TColor.GetColor("#E64A19"),  # Dark Orange
+    #ROOT.TColor.GetColor("#D84315"),  # Burnt Orange
+    #ROOT.TColor.GetColor("#E64A19"),  # Dark Orange
     ROOT.TColor.GetColor("#FF5722"),  # Orange
     ROOT.TColor.GetColor("#FF6F20"),  # Coral
-    ROOT.TColor.GetColor("#FF8C42"),  # Light Coral
+    #ROOT.TColor.GetColor("#FF8C42"),  # Light Coral
     ROOT.TColor.GetColor("#FFB74D"),  # Peach
-    ROOT.TColor.GetColor("#FFCC99"),  # Light Orange
+    #ROOT.TColor.GetColor("#FFCC99"),  # Light Orange
 ]
 
 color_palette_nonprompt = [
     ROOT.TColor.GetColor("#092147"),  # Midnight Blue
-    ROOT.TColor.GetColor("#0E3B7C"),  # Dark Navy
+    #OOT.TColor.GetColor("#0E3B7C"),  # Dark Navy
     ROOT.TColor.GetColor("#316C97"),  # Teal Blue
-    ROOT.TColor.GetColor("#1A53B0"),  # Deep Ocean Blue
-    ROOT.TColor.GetColor("#1C75BC"),  # Medium Blue
+    #OOT.TColor.GetColor("#1A53B0"),  # Deep Ocean Blue
+    #ROOT.TColor.GetColor("#1C75BC"),  # Medium Blue
     ROOT.TColor.GetColor("#4A90E2"),  # Sky Blue
     ROOT.TColor.GetColor("#5398DD"),  # Fresh Blue
-    ROOT.TColor.GetColor("#74B3CE"),  # Soft Blue
+    #OOT.TColor.GetColor("#74B3CE"),  # Soft Blue
     ROOT.TColor.GetColor("#7AA9E9"),  # Soft Azure
-    ROOT.TColor.GetColor("#A7C7E7"),  # Light Sky Blue
+    #OOT.TColor.GetColor("#A7C7E7"),  # Light Sky Blue
 ]
 
-outfile = ROOT.TFile("eff_vcent.root", "recreate")
+outpath = './eff_occ_check/'
+outfile = ROOT.TFile(f"{outpath}eff_vcent.root", "recreate")
 
 # Loop over mesons
 for meson in particle_data:
@@ -164,8 +175,9 @@ for meson in particle_data:
         heff_empty = []
         heff_npvp_ratio_empty = []
         # Loop over centrality
+        centralities = get_skimmed_cents(cent_interval)
         for icent, (centrality) in enumerate(centralities):
-            if centrality in ['0_10', '10_20']:
+            if centrality in ["0_10", "10_20"]:
                 cent_class = 0
             elif centrality in ["20_30", "30_40", "40_50"]:
                 cent_class = 1
@@ -240,16 +252,16 @@ for meson in particle_data:
 
         if category == "nonprompt":
             canvas_npvp_ratio.cd()
-            #legend.Draw()
-            #leg_empty.Draw()
-            canvas_npvp_ratio.SaveAs(f"{mes}meson_efficiencyratio_comparison.jpg")
+            # legend.Draw()
+            # leg_empty.Draw()
+            canvas_npvp_ratio.SaveAs(f"{outpath}{mes}meson_efficiencyratio_{cent_interval}_comparison.png")
             canvas_npvp_ratio.Write()
 
         canvas.cd()
         legend.Draw()
         leg_empty.Draw()
         canvas.Draw()
-        canvas.SaveAs(f"{category}{mes}meson_efficiency_comparison.jpg")
+        canvas.SaveAs(f"{outpath}{category}{mes}meson_efficiency_{cent_interval}_comparison.png")
         canvas.Write()
 
         canvas_cent_ratio.cd()
@@ -276,7 +288,7 @@ for meson in particle_data:
             hratio.Write()
 
         canvas_cent_ratio.Draw()
-        canvas_cent_ratio.SaveAs(f"{category}{mes}meson_efficiencyratio_comparison.jpg")
+        canvas_cent_ratio.SaveAs(f"{outpath}{category}{mes}meson_efficiencyratio_{cent_interval}_comparison.png")
         canvas_cent_ratio.Write()
 
         del hratio

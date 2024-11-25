@@ -5,13 +5,13 @@
 # Define default parameters
 TARGET_DIR="./inputs/"
 OUTPUT_DIR="./outputs/"
-INPUT_DIRS=("/alice/cern.ch/user/a/alihyperloop/outputs/0029/293900/49793")
-SUFFIXES=("HF_LHC24h2_All_train293900")
+INPUT_DIRS=("/alice/cern.ch/user/a/alihyperloop/outputs/0029/297932/52263")
+SUFFIXES=("HF_LHC24i4_All_train297932")
 FILES_TO_MERGE=("AnalysisResults")
 CURRENT_DIR=$(pwd)
 SYSTEM=pp
-OLDER_MC="outputs/HF_LHC24h2_All_train293900/QA_output_HF_LHC24h2_All_train293900.root" # optional: one can provide a list of QA file to be compared
-MC_LABLES="h2 h2" # optional: if OLDER_MC is provided, one has to provide a label for each MC and the first one must be the current one
+OLDER_MC="/home/spolitan/alice/analyses/hf-mc/postprocess/outputs/HF_LHC24i3_All_train283358/QA_output_HF_LHC24i3_All_train283358.root" # optional: one can provide a list of QA file to be compared
+MC_LABLES="i4_297932 i3_283358" # optional: if OLDER_MC is provided, one has to provide a label for each MC and the first one must be the 
 
 # Submit the Python script with the provided arguments
 python3 download.py \
@@ -85,4 +85,19 @@ if [ -n "$OLDER_MC" ]; then
     # Compare QA files
     echo "Compare QA files"
     python3 compare_qa_mc_val.py -i $OUTPUT_DIR/QA_output_$SUFFIXES.root $OLDER_MC -l $MC_LABLES -o $OUTPUT_DIR  
+
+    # Merge all PDF files with "collisions" in the filename into a single PDF
+    COMPARE_PDFS=$(find "$OUTPUT_DIR" -name "comparison_qa_mc*.pdf" | sort)
+
+    if [ -n "$COMPARE_PDFS" ]; then
+        # Output merged PDF name
+        MERGED_PDF="$OUTPUT_DIR/$SUFFIXES _comparison_qa_mc.pdf"
+
+        # Merge PDFs using pdfunite or gs
+        pdfunite $COMPARE_PDFS "$MERGED_PDF"
+
+        echo "Merged collisions PDFs into $MERGED_PDF"
+    else
+        echo "No collisions PDF files found to merge."
+    fi
 fi
