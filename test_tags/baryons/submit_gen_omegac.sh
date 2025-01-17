@@ -1,0 +1,1 @@
+${O2DPG_ROOT}/GRID/utils/grid_submit.sh --script run_gen_omegac.sh --jobname evtpool_bbar_Omegac --outputspec '"*log*@disk=1","tf*/*log*@disk=1"' --packagespec "O2sim::v20241210-1" --wait --fetch-output
