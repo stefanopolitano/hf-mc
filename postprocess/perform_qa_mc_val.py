@@ -1035,6 +1035,8 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
     dir_gen_distr.cd()
     h_abundances_promptmeson.Write()
     h_abundances_nonpromptmeson.Write()
+    h_abundances_promptbaryon.Write()
+    h_abundances_nonpromptbaryon.Write()
     for hist in h_pt_gen_prompt:
         hist.Write()
     for hist in h_pt_gen_nonprompt:

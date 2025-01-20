@@ -47,7 +47,7 @@ def compare(infiles, labels, outdir):
     for label in labels:
         prefix += label
 
-    ismesons = False
+    ismesons = True
     if ismesons:
         hadrons = ["DzeroToKPi", "DplusToPiKPi", "DsToPhiPiToKKPi"]
         had_labels = ["D^{0}", "D^{#plus}", "D_{s}^{#plus}"]
@@ -75,8 +75,8 @@ def compare(infiles, labels, outdir):
     for i_bin, label in enumerate(labels):
         hist_reco_coll_eff.GetXaxis().SetBinLabel(i_bin+1, label)
 
-    h_ntracks, h_prompt_eff, h_nonprompt_eff, h_ratio_eff = (
-        [] for _ in range(4))
+    h_abundancy_prompt, h_abundancy_nonprompt, h_ntracks, h_prompt_eff, h_nonprompt_eff, h_ratio_eff = (
+        [] for _ in range(6))
     h_frac_amb, h_eff_amb = [], []
     (
     h_pt_gen_prompt,
@@ -97,6 +97,8 @@ def compare(infiles, labels, outdir):
         hist_reco_coll_eff.SetBinContent(i_file+1, eff)
         hist_reco_coll_eff.SetBinError(i_file+1, err_eff)
 
+        h_abundancy_prompt.append({})
+        h_abundancy_nonprompt.append({})
         h_pt_gen_prompt.append({})
         h_pt_gen_fd.append({})
         h_y_gen_prompt.append({})
@@ -127,6 +129,7 @@ def compare(infiles, labels, outdir):
             h_declenen_gen_fd[i_file][had] = infile.Get(
                 f"gen-distr/h_declenen_gen_nonprompt{had}")
 
+
             set_obj_style(h_prompt_eff[i_file][had], color, marker)
             set_obj_style(h_nonprompt_eff[i_file][had], color, marker)
             set_obj_style(h_ratio_eff[i_file][had], color, marker)
@@ -136,6 +139,19 @@ def compare(infiles, labels, outdir):
             set_obj_style(h_pt_gen_fd[i_file][had], color, marker)
             set_obj_style(h_declenen_gen_prompt[i_file][had], color, marker)
             set_obj_style(h_declenen_gen_fd[i_file][had], color, marker)
+
+        h_abundancy_prompt[i_file]['meson'] = infile.Get(
+            f"gen-distr/h_abundances_promptmeson")
+        h_abundancy_nonprompt[i_file]['meson'] = infile.Get(
+            f"gen-distr/h_abundances_nonpromptmeson")
+        h_abundancy_prompt[i_file]['baryon'] = infile.Get(
+            f"gen-distr/h_abundances_promptbaryon")
+        h_abundancy_nonprompt[i_file]['baryon'] = infile.Get(
+            f"gen-distr/h_abundances_nonpromptbaryon")
+        set_obj_style(h_abundancy_prompt[i_file]['meson'], color, marker)
+        set_obj_style(h_abundancy_nonprompt[i_file]['meson'], color, marker)
+        set_obj_style(h_abundancy_prompt[i_file]['baryon'], color, marker)
+        set_obj_style(h_abundancy_nonprompt[i_file]['baryon'], color, marker)
 
     line_at_unity = ROOT.TLine(0., 1., 50., 1.)
     line_at_unity.SetLineColor(ROOT.kGray+1)
@@ -148,6 +164,28 @@ def compare(infiles, labels, outdir):
     leg.SetTextSize(0.03)
     for i_file, label in enumerate(labels):
         leg.AddEntry(h_prompt_eff[i_file][had], label, "pl")
+
+    c_abundancy = ROOT.TCanvas("c_abundancy", "", 1600, 1600)
+    c_abundancy.Divide(2, 2)
+    c_abundancy.cd(1).SetLogy()
+    h_abundancy_prompt[0]['meson'].Draw("HIST E")
+    for i_file in range(1, n_files):
+        h_abundancy_prompt[i_file]['meson'].Draw("HIST E same")
+    leg.Draw()
+    c_abundancy.cd(2).SetLogy()
+    h_abundancy_nonprompt[0]['meson'].Draw("HIST E")
+    for i_file in range(1, n_files):
+        h_abundancy_nonprompt[i_file]['meson'].Draw("HIST E same")
+    c_abundancy.cd(3).SetLogy()
+    h_abundancy_prompt[0]['baryon'].Draw("HIST E")
+    for i_file in range(1, n_files):
+        h_abundancy_prompt[i_file]['baryon'].Draw("HIST E same")
+    c_abundancy.cd(4).SetLogy()
+    h_abundancy_nonprompt[0]['baryon'].Draw("HIST E")
+    for i_file in range(1, n_files):
+        h_abundancy_nonprompt[i_file]['baryon'].Draw("HIST E same")
+    c_abundancy.Modified()
+    c_abundancy.Update()
 
     c_reco_coll_eff = ROOT.TCanvas("c_reco_coll_eff", "", 1200, 800)
     c_reco_coll_eff.SetRightMargin(0.1)
@@ -256,7 +294,8 @@ def compare(infiles, labels, outdir):
         c_declenen_gen_prompt.cd(i_had+1).SetGrid()
         for i_file in range(n_files):
             h_declenen_gen_prompt[i_file][had].GetXaxis().SetNdivisions(505)
-            h_declenen_gen_prompt[i_file][had].Scale(1./h_declenen_gen_prompt[i_file][had].Integral())
+            if (h_declenen_gen_prompt[i_file][had].Integral() != 0):
+                h_declenen_gen_prompt[i_file][had].Scale(1./h_declenen_gen_prompt[i_file][had].Integral())
             h_declenen_gen_prompt[i_file][had].Draw("same")
         if i_had == 0:
             leg.Draw()
@@ -288,7 +327,8 @@ def compare(infiles, labels, outdir):
         c_declenen_gen_fd.cd(i_had+1).SetLogy()
         c_declenen_gen_fd.cd(i_had+1).SetGrid()
         for i_file in range(n_files):
-            h_declenen_gen_fd[i_file][had].Scale(1./h_declenen_gen_fd[i_file][had].Integral())
+            if (h_declenen_gen_fd[i_file][had].Integral() != 0):
+                h_declenen_gen_fd[i_file][had].Scale(1./h_declenen_gen_fd[i_file][had].Integral())
             h_declenen_gen_fd[i_file][had].Draw("same")
         if i_had == 0:
             leg.Draw()
@@ -319,7 +359,8 @@ def compare(infiles, labels, outdir):
         c_pt_gen_prompt.cd(i_had+1).SetLogy()
         c_pt_gen_prompt.cd(i_had+1).SetGrid()
         for i_file in range(n_files):
-            h_pt_gen_prompt[i_file][had].Scale(1./h_pt_gen_prompt[i_file][had].Integral())
+            if (h_pt_gen_prompt[i_file][had].Integral() != 0):
+                h_pt_gen_prompt[i_file][had].Scale(1./h_pt_gen_prompt[i_file][had].Integral())
             h_pt_gen_prompt[i_file][had].Draw("same")
         if i_had == 0:
             leg.Draw()
@@ -350,7 +391,8 @@ def compare(infiles, labels, outdir):
         c_pt_gen_fd.cd(i_had+1).SetLogy()
         c_pt_gen_fd.cd(i_had+1).SetGrid()
         for i_file in range(n_files):
-            h_pt_gen_fd[i_file][had].Scale(1./h_pt_gen_fd[i_file][had].Integral())
+            if (h_pt_gen_fd[i_file][had].Integral() != 0):
+                h_pt_gen_fd[i_file][had].Scale(1./h_pt_gen_fd[i_file][had].Integral())
             h_pt_gen_fd[i_file][had].Draw("same")
         if i_had == 0:
             leg.Draw()
@@ -382,7 +424,8 @@ def compare(infiles, labels, outdir):
         c_y_gen_prompt.cd(i_had+1).SetLogy()
         c_y_gen_prompt.cd(i_had+1).SetGrid()
         for i_file in range(n_files):
-            h_y_gen_prompt[i_file][had].Scale(1./h_y_gen_prompt[i_file][had].Integral())
+            if (h_y_gen_prompt[i_file][had].Integral() != 0):
+                h_y_gen_prompt[i_file][had].Scale(1./h_y_gen_prompt[i_file][had].Integral())
             h_y_gen_prompt[i_file][had].Draw("same")
         if i_had == 0:
             leg.Draw()
@@ -414,7 +457,8 @@ def compare(infiles, labels, outdir):
         c_y_gen_fd.cd(i_had+1).SetLogy()
         c_y_gen_fd.cd(i_had+1).SetGrid()
         for i_file in range(n_files):
-            h_y_gen_fd[i_file][had].Scale(1./h_y_gen_fd[i_file][had].Integral())
+            if (h_y_gen_fd[i_file][had].Integral() != 0):
+                h_y_gen_fd[i_file][had].Scale(1./h_y_gen_fd[i_file][had].Integral())
             h_y_gen_fd[i_file][had].Draw("same")
         if i_had == 0:
             leg.Draw()
@@ -434,6 +478,7 @@ def compare(infiles, labels, outdir):
     c_y_gen_fd.Modified()
     c_y_gen_fd.Update()
 
+    c_abundancy.SaveAs(os.path.join(outdir, f"{prefix}_abundancy_{suffix}.pdf"))
     c_reco_coll_eff.SaveAs(os.path.join(outdir, f"{prefix}_reco_collision_eff_{suffix}.pdf"))
     c_mult.SaveAs(os.path.join(outdir, f"{prefix}_mult_distr_{suffix}.pdf"))
     c_eff_prompt.SaveAs(os.path.join(outdir, f"{prefix}_prompt_efficiencies_{suffix}.pdf"))
