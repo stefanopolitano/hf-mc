@@ -1,0 +1,33 @@
+#!/bin/bash
+
+export ALIEN_JDL_CPULIMIT=8
+export ALIEN_JDL_LPMANCHORPASSNAME="apass1"
+export ALIEN_JDL_MCANCHOR="apass1"
+export ALIEN_JDL_COLLISIONSYSTEM="pp"
+export ALIEN_JDL_LPMPASSNAME="apass1"
+export ALIEN_JDL_LPMRUNNUMBER="550367"
+export ALIEN_JDL_LPMPRODUCTIONTYPE="MC"
+export ALIEN_JDL_LPMINTERACTIONTYPE="pp"
+export ALIEN_JDL_LPMPRODUCTIONTAG="apass1"
+export ALIEN_JDL_LPMANCHORRUN="550367"
+export ALIEN_JDL_LPMANCHORPRODUCTION="LHC24f"
+export ALIEN_JDL_LPMANCHORYEAR="2024"
+
+# added export
+export NTIMEFRAMES=4
+export NSIGEVENTS=100
+
+export SPLITID=100
+export PRODSPLIT=153
+export CYCLE=5
+
+# disable the QC
+export DISABLE_QC=1
+
+export ALIEN_JDL_O2DPG_ASYNC_RECO_TAG="O2PDPSuite::async-async-v1-01-02d-slc9-alidist-async-v1-01-02-1" # async tag
+
+INI_PATH=${O2DPG_ROOT}/MC/config/PWGHF/ini/GeneratorHF_D2H_bbbar_BtoDK_gap5_Mode2.ini # .ini file path
+
+export ALIEN_JDL_ANCHOR_SIM_OPTIONS="-gen external -ini $INI_PATH"
+
+${O2DPG_ROOT}/MC/run/ANCHOR/anchorMC.sh
