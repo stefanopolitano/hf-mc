@@ -11,7 +11,7 @@ def set_obj_style(obj, col, mark):
     """
     Helper function to set object style
     """
-    obj.SetDirectory(0)
+    #obj.SetDirectory(0)
     obj.SetLineColorAlpha(col, 0.6)
     obj.SetLineWidth(2)
     obj.SetMarkerColorAlpha(col, 0.6)
@@ -128,7 +128,8 @@ def compare(infiles, labels, outdir):
                 f"gen-distr/h_declenen_gen_prompt{had}")
             h_declenen_gen_fd[i_file][had] = infile.Get(
                 f"gen-distr/h_declenen_gen_nonprompt{had}")
-
+            h_prompt_eff[i_file][had].SaveAs('cicio.root')
+            input()
 
             set_obj_style(h_prompt_eff[i_file][had], color, marker)
             set_obj_style(h_nonprompt_eff[i_file][had], color, marker)

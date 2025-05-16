@@ -1,0 +1,3 @@
+LABEL=corrBkg_PbPb_no2tag
+SCRIPT=run_corrbkg_pbpb_no2tag.sh
+${O2DPG_ROOT}/GRID/utils/grid_submit.sh --script $SCRIPT --jobname test_anchor_$LABEL --packagespec "O2PDPSuite::async-async-v1-01-27-slc8-alidist-async-v1-01-05-1" --outputspec '"*log*@disk=1","tf*/*log*@disk=1","AO2D.root@disk=2","tf*/AO2D.root@disk=2"' --erroroutputspec '"*log*@disk=1","tf*/*log*@disk=1","AO2D.root@disk=2","tf*/AO2D.root@disk=2"' --wait --fetch-output

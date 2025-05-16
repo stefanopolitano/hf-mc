@@ -18,15 +18,15 @@ marker_styles = [
 ]
 
 color_palette_prompt = [
-    # ROOT.TColor.GetColor("#8A3307"),  # Dark Rust
-    ROOT.TColor.GetColor("#A73D08"),  # Rust
-    # ROOT.TColor.GetColor("#BF360C"),  # Deep Orange
+    #ROOT.TColor.GetColor("#8A3307"),  # Dark Rust
+    #ROOT.TColor.GetColor("#A73D08"),  # Rust
+    #ROOT.TColor.GetColor("#BF360C"),  # Deep Orange
     ROOT.TColor.GetColor("#D84315"),  # Burnt Orange
-    # ROOT.TColor.GetColor("#E64A19"),  # Dark Orange
-    ROOT.TColor.GetColor("#FF5722"),  # Orange
-    # ROOT.TColor.GetColor("#FF6F20"),  # Coral
-    ROOT.TColor.GetColor("#FF8C42"),  # Light Coral
-    # ROOT.TColor.GetColor("#FFB74D"),  # Peach
+    #ROOT.TColor.GetColor("#E64A19"),  # Dark Orange
+    #ROOT.TColor.GetColor("#FF5722"),  # Orange
+    ROOT.TColor.GetColor("#FF6F20"),  # Coral
+    #ROOT.TColor.GetColor("#FF8C42"),  # Light Coral
+    #ROOT.TColor.GetColor("#FFB74D"),  # Peach
     ROOT.TColor.GetColor("#FFCC99"),  # Light Orange
 ]
 
@@ -270,7 +270,7 @@ def set_style(histo, ytitle):
     histo.GetXaxis().SetTitleOffset(1.2)
     histo.GetXaxis().SetLabelSize(0.045)
     histo.GetYaxis().SetTitle(ytitle)
-    histo.GetYaxis().SetRangeUser(1.0e-3, 2.02)
+    histo.GetYaxis().SetRangeUser(1.0e-1, 2.02)
     histo.GetYaxis().SetMaxDigits(1)
     histo.SetStats(0)
 
@@ -282,19 +282,62 @@ def set_style(histo, ytitle):
     histo.SetLineWidth(2)
 
 
+def count_entries_in_interval(x_range, y_range,
+                              file_name='/home/spolitan/alice/analyses/hf-mc/postprocess/inputs/AnalysisResults_nev_small.root', hist_name='hf-task-flow-charm-hadrons/hCollisionsCentOcc'):
+    """
+    Counts the entries of a TH2 histogram within a given interval.
+
+    Parameters:
+        file_name (str): The name of the ROOT file containing the histogram.
+        hist_name (str): The name of the TH2 histogram.
+        x_range (tuple): A tuple (x_min, x_max) defining the x-axis range.
+        y_range (tuple): A tuple (y_min, y_max) defining the y-axis range.
+
+    Returns:
+        int: The count of entries in the specified interval.
+    """
+    # Open the ROOT file
+    file = ROOT.TFile(file_name, "READ")
+    if not file.IsOpen():
+        raise IOError(f"Could not open file {file_name}.")
+
+    # Retrieve the histogram
+    hist = file.Get(hist_name)
+    if not hist or not isinstance(hist, ROOT.TH2):
+        raise ValueError(f"Histogram {hist_name} not found or not a TH2 in file {file_name}.")
+
+    # Find the bin range corresponding to the specified intervals
+    x_bin_min = hist.GetXaxis().FindBin(x_range[0]+0.0001)
+    x_bin_max = hist.GetXaxis().FindBin(x_range[1]-0.0001)
+    y_bin_min = hist.GetYaxis().FindBin(y_range[0]+0.0001)
+    y_bin_max = hist.GetYaxis().FindBin(y_range[1]-0.0001)
+
+    # Count the entries in the specified range
+    entry_count = 0
+    for x_bin in range(x_bin_min, x_bin_max + 1):
+        for y_bin in range(y_bin_min, y_bin_max + 1):
+            entry_count += hist.GetBinContent(x_bin, y_bin)
+
+    # Close the file
+    file.Close()
+
+    return entry_count
+
 # Main script
 centralities = [20, 50]
 useFT0c = False
-infile = f"/home/spolitan/alice/analyses/hf-mc/postprocess/inputs/AnalysisResults_data_medium_occupancy_{centralities[0]}{centralities[1]}.root"
+infile = f"/home/spolitan/alice/analyses/hf-mc/postprocess/inputs/AnalysisResults_data_d0_occupancy_{centralities[0]}{centralities[1]}.root"
+
 if useFT0c:
     indir = "hf-task-flow-charm-hadrons_occ_ft0c"
 else:
     indir = "hf-task-flow-charm-hadrons"
+
 thn_name = "hSparseFlowCharm"
 if useFT0c:
-    outdir = f"data_occupancy_ft0c_{centralities[0]}{centralities[1]}"
+    outdir = f"data_occupancy_ft0c_norm_{centralities[0]}{centralities[1]}"
 else:
-    outdir = f"data_medium_occupancy_{centralities[0]}{centralities[1]}"
+    outdir = f"data_occupancy_d0_norm_{centralities[0]}{centralities[1]}"
 
 occupancies = [0, 2000, 4000, 999999]
 pt_bins = [2, 3, 4, 5, 6, 8, 10, 12, 24]
@@ -416,6 +459,10 @@ for icent, (cent_min, cent_max) in enumerate(
             nbins,
             np.asarray(pt_bins, "d"),
         )
+        
+        nev = count_entries_in_interval([cent_min, cent_max], [occ_min, occ_max])
+        input(f" Nev in cent({cent_min}-{cent_max}) occ({occ_min}-{occ_max}): {nev}")
+        
         for ipt, (pt_min, pt_max) in enumerate(
             zip(pt_bins[:-1], pt_bins[1:])
         ):  # loop over pt bins
@@ -443,14 +490,14 @@ for icent, (cent_min, cent_max) in enumerate(
             hist_mean[icent][iocc].SetBinError(ipt + 1, dict["mean"][1])
             hist_sigma[icent][iocc].SetBinContent(ipt + 1, dict["sigma"][0])
             hist_sigma[icent][iocc].SetBinError(ipt + 1, dict["sigma"][1])
-            hist_s[icent][iocc].SetBinContent(ipt + 1, dict["signal"][0])
-            hist_s[icent][iocc].SetBinError(ipt + 1, dict["signal"][1])
-            hist_b[icent][iocc].SetBinContent(ipt + 1, dict["background"][0])
-            hist_b[icent][iocc].SetBinError(ipt + 1, dict["background"][1])
+            hist_s[icent][iocc].SetBinContent(ipt + 1, dict["signal"][0] / nev)
+            hist_s[icent][iocc].SetBinError(ipt + 1, dict["signal"][1] / nev)
+            hist_b[icent][iocc].SetBinContent(ipt + 1, dict["background"][0] / nev)
+            hist_b[icent][iocc].SetBinError(ipt + 1, dict["background"][1] / nev)
             hist_soverb[icent][iocc].SetBinContent(ipt + 1, dict["s/b"][0])
             hist_soverb[icent][iocc].SetBinError(ipt + 1, dict["s/b"][1])
-            hist_signif[icent][iocc].SetBinContent(ipt + 1, dict["significance"][0])
-            hist_signif[icent][iocc].SetBinError(ipt + 1, dict["significance"][1])
+            hist_signif[icent][iocc].SetBinContent(ipt + 1, dict["significance"][0] / np.sqrt(nev))
+            hist_signif[icent][iocc].SetBinError(ipt + 1, dict["significance"][1] / np.sqrt(nev))
 
             hmass.Write()
             hsp.Write()
@@ -477,7 +524,7 @@ for icent, (cent_min, cent_max) in enumerate(
     )
     canvas_cent_ratio_s.cd().SetGridy()
     canvas_cent_ratio_s.cd().SetGridx()
-    canvas_cent_ratio_s.cd().SetLogy()
+    #canvas_cent_ratio_s.cd().SetLogy()
     canvas_cent_ratio_s.cd().SetLeftMargin(0.2)
 
     legend = ROOT.TLegend(0.35, 0.2, 0.8, 0.5)
@@ -515,7 +562,7 @@ for icent, (cent_min, cent_max) in enumerate(
     )
     canvas_cent_ratio_b.cd().SetGridy()
     canvas_cent_ratio_b.cd().SetGridx()
-    canvas_cent_ratio_b.cd().SetLogy()
+    #canvas_cent_ratio_b.cd().SetLogy()
     canvas_cent_ratio_b.cd().SetLeftMargin(0.2)
 
     legend = ROOT.TLegend(0.35, 0.2, 0.8, 0.5)
@@ -553,7 +600,7 @@ for icent, (cent_min, cent_max) in enumerate(
     )
     canvas_cent_ratio_soverb.cd().SetGridy()
     canvas_cent_ratio_soverb.cd().SetGridx()
-    canvas_cent_ratio_soverb.cd().SetLogy()
+    #canvas_cent_ratio_soverb.cd().SetLogy()
     canvas_cent_ratio_soverb.cd().SetLeftMargin(0.2)
 
     legend = ROOT.TLegend(0.35, 0.2, 0.8, 0.5)
@@ -593,7 +640,7 @@ for icent, (cent_min, cent_max) in enumerate(
     )
     canvas_cent_ratio_signif.cd().SetGridy()
     canvas_cent_ratio_signif.cd().SetGridx()
-    canvas_cent_ratio_signif.cd().SetLogy()
+    #canvas_cent_ratio_signif.cd().SetLogy()
     canvas_cent_ratio_signif.cd().SetLeftMargin(0.2)
 
     legend = ROOT.TLegend(0.35, 0.2, 0.8, 0.5)
