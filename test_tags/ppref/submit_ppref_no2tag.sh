@@ -1,0 +1,3 @@
+LABEL=test_anchor_anchor_ppref_no2tag
+SCRIPT=run_ppref_no2tag.sh
+${O2DPG_ROOT}/GRID/utils/grid_submit.sh --script $SCRIPT --jobname test_anchor_$LABEL --packagespec "O2PDPSuite::async-async-2024-ppRef-apass1-v2-slc9-alidist-async-2024-ppRef-apass1-v1-1" --outputspec '"*log*@disk=1","tf*/*log*@disk=1","AO2D.root@disk=2","tf*/AO2D.root@disk=2"' --erroroutputspec '"*log*@disk=1","tf*/*log*@disk=1","AO2D.root@disk=2","tf*/AO2D.root@disk=2"' --wait --fetch-output
