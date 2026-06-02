@@ -2,21 +2,13 @@ import ROOT
 
 # six home-made color to mimic transparency
 _COLOR_BASES = [
+    ROOT.kBlack,
+    ROOT.kRed + 1,
+    ROOT.kAzure + 4,
     ROOT.kOrange + 2,
-    ROOT.kAzure + 4,
-    ROOT.kRed + 1,
     ROOT.kGreen + 2,
-    ROOT.kRed + 1,
-    ROOT.kAzure + 4,
-    ROOT.kGreen + 2,
-    ROOT.kOrange + 1,
     ROOT.kViolet + 4,
     ROOT.kCyan + 2,
-    ROOT.kViolet + 4,
-    ROOT.kCyan + 2,
-    ROOT.kTeal + 2,
-    ROOT.kPink + 1,
-    ROOT.kYellow + 1,
     ROOT.kTeal + 2,
     ROOT.kPink + 1,
     ROOT.kYellow + 1,
@@ -56,7 +48,7 @@ def set_style(hist, color, marker, label):
     hist.SetMarkerSize(1)
     hist.SetTitle(f";track #it{{p}}_{{T}} (GeV/c);ITS-TPC tracking #varepsilon ({label}, primary)")
     hist.GetYaxis().SetRangeUser(0, 1.2)
-    hist.GetXaxis().SetRangeUser(0, 5)
+    hist.GetXaxis().SetRangeUser(0, 10)
     hist.GetXaxis().SetTitleOffset(1.2)
     hist.GetYaxis().SetTitleOffset(1.4)
 
@@ -79,13 +71,18 @@ def download_anres(file_name, mclabel):
 # Example usage
 if __name__ == "__main__":
     input_files = [
-        "/alice/cern.ch/user/a/alihyperloop/outputs/0062/628342/213754",
-        "/alice/cern.ch/user/a/alihyperloop/outputs/0066/668947/237364",
+        "/alice/cern.ch/user/a/alihyperloop/outputs/0062/626303/212981",
+        "/alice/cern.ch/user/a/alihyperloop/outputs/0063/633616/216636",
+        "/alice/cern.ch/user/a/alihyperloop/outputs/0063/631606/215619",
+        "/alice/cern.ch/user/a/alihyperloop/outputs/0069/690868/250864",
+        "/alice/cern.ch/user/a/alihyperloop/outputs/0069/690868/250864"
     ]  # corresponding input files for the MC labels
-    mclabels = ["25g3b", "26c9"]  # corresponding labels for the input files
+    mclabels = ["23k4i", "24h1c-MB", "24h1c", "24h1d-MB", "24h1d"]  # corresponding labels for the input files
     pdgs = [211, 321, 2212]  # pi, K, p
+    wagonid = ['', '', '', 'id56358', 'id36262']  # corresponding wagon IDs for the input files (if needed for downloading)
     useTfBorderCut = False
-    download_files = [True, True]  # Set to True to enable downloading files from MonALISA if not present locally
+    download_files = [True, True, True, True, True]  # Set to True to enable downloading files from MonALISA if not present locally
+    setlogx = True
 
     outfile_name = "tracking_efficiency"
     for mc_label in mclabels:
@@ -97,7 +94,7 @@ if __name__ == "__main__":
 
     heff_compare = {}
     canvases = []
-    for ifile, (input_file, mclabel, download_file) in enumerate(zip(input_files, mclabels, download_files)):
+    for ifile, (input_file, mclabel, download_file, id) in enumerate(zip(input_files, mclabels, download_files, wagonid)):
         print(f"Processing input file: {input_file} with MC label: {mclabel}")
         outfile.mkdir(mclabel)
         outfile.cd(mclabel)
@@ -106,7 +103,7 @@ if __name__ == "__main__":
         if download_file:
             download_anres(input_file, mclabel)
 
-        folder_name = "qa-efficiency"
+        folder_name = "qa-efficiency" if id == '' else f"qa-efficiency_{id}"
         if useTfBorderCut:
             folder_name += "_withTFBorderCut"
         folder_name += "/MC"
@@ -180,7 +177,7 @@ if __name__ == "__main__":
             hpos.GetYaxis().SetRangeUser(3.e-1, 1.2)
             hpos.GetYaxis().SetDecimals()
             hpos.GetYaxis().SetNdivisions(505)
-            hpos.GetXaxis().SetRangeUser(0.1, 5)
+            hpos.GetXaxis().SetRangeUser(0.1, 10)
             hpos.DrawCopy("E1")
             hneg.DrawCopy("E1 SAME")
 
@@ -215,25 +212,27 @@ if __name__ == "__main__":
             #canvas_compare.cd(i + 1).SetLogx()
             canvas_compare.cd(i + 1).SetLogy()
             canvas_compare.cd(i + 1).SetLeftMargin(0.15)
+            if setlogx: canvas_compare.cd(i + 1).SetLogx()
 
             heff = heff_compare[mclabel][pdg]['pos']
             heffneg = heff_compare[mclabel][pdg]['neg']
 
             heff.SetStats(0)
             heff.GetYaxis().SetRangeUser(3.e-2, 1.2)
-            heff.GetYaxis().SetNdivisions(505)
+            heff.GetYaxis().SetNdivisions(525)
             heff.GetYaxis().SetMaxDigits(1)
             heff.GetYaxis().SetTitleOffset(1.8)
             heff.GetYaxis().SetMoreLogLabels()
-            heff.GetXaxis().SetRangeUser(0.1, 5)
+            heff.GetXaxis().SetRangeUser(0.1, 10)
+            if setlogx: heff.GetXaxis().SetMoreLogLabels()
             if ifile == 0:
                 heff.SetTitle(f"Primary {labels[i]};track #it{{p}}_{{T}} (GeV/c);ITS-TPC tracking #varepsilon ({labels[i]}, primary)")
-                heff.DrawCopy("E1Z")
+                heff.DrawCopy("1Z")
             else:
-                heff.DrawCopy("E1Z SAME")
+                heff.DrawCopy("1Z SAME")
             #heffneg.DrawCopy("E1 SAME")
 
-            legend_compare.AddEntry(heff, f"{labels[i]}+ {mclabel}", "p")
+            legend_compare.AddEntry(heff, f"{labels[i]}+ {mclabel}", "pe")
             #legend_compare.AddEntry(heffneg, f"{labels[i]}- {mclabel}", "p")
 
     canvas_compare.cd(1)
@@ -241,16 +240,16 @@ if __name__ == "__main__":
 
     # Ratio panels in bottom row: others / first input (positive charge only)
     ref_label = mclabels[0]
-    legend_ratio = ROOT.TLegend(0.25, 0.15, 0.85, 0.45)
+    legend_ratio = ROOT.TLegend(0.25, 0.15, 0.85, 0.35)
     legend_ratio.SetBorderSize(1)
     legend_ratio.SetTextSize(0.03)
-    legend_ratio.SetNColumns(max(1, len(mclabels) - 1))
-    legend_ratio.SetHeader("")
+    #legend_ratio.SetNColumns(max(1, len(mclabels) - 1))
 
     for i, pdg in enumerate(pdgs):
         canvas_compare.cd(i + 4).SetGridy()
         canvas_compare.cd(i + 4).SetGridx()
         canvas_compare.cd(i + 4).SetLeftMargin(0.15)
+        if setlogx: canvas_compare.cd(i + 4).SetLogx()
 
         ref = heff_compare[ref_label][pdg]['pos']
         for j, mclabel in enumerate(mclabels[1:], start=1):
@@ -259,17 +258,19 @@ if __name__ == "__main__":
             ratio.Divide(ratio, ref, 1.0, 1.0, "B")
             ratio.SetStats(0)
             ratio.GetYaxis().SetRangeUser(0.8, 1.2)
-            ratio.GetYaxis().SetNdivisions(505)
+            ratio.GetYaxis().SetNdivisions(515)
             ratio.GetYaxis().SetTitleOffset(1.8)
             ratio.GetYaxis().SetTitle(f"others / {ref_label}")
-            ratio.GetXaxis().SetRangeUser(0.1, 5)
+            ratio.GetXaxis().SetRangeUser(0.1, 10)
+            if setlogx: ratio.GetXaxis().SetMoreLogLabels()
 
             if j == 1:
-                ratio.DrawCopy("E1Z")
+                ratio.DrawCopy("1Z>")
             else:
-                ratio.DrawCopy("E1Z SAME")
+                ratio.DrawCopy("1Z> SAME")
 
-            legend_ratio.AddEntry(ratio, f"{labels[i]}+ {mclabel}/{ref_label}", "p")
+            if i == 0:
+                legend_ratio.AddEntry(ratio, f"{mclabel}/{ref_label}", "peC")
 
     canvas_compare.cd(4)
     legend_ratio.Draw()
