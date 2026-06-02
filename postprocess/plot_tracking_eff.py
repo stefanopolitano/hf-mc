@@ -71,17 +71,22 @@ def download_anres(file_name, mclabel):
 # Example usage
 if __name__ == "__main__":
     input_files = [
-        "/alice/cern.ch/user/a/alihyperloop/outputs/0062/626303/212981",
-        "/alice/cern.ch/user/a/alihyperloop/outputs/0063/633616/216636",
-        "/alice/cern.ch/user/a/alihyperloop/outputs/0063/631606/215619",
+        #"/alice/cern.ch/user/a/alihyperloop/outputs/0062/626303/212981",
+        #"/alice/cern.ch/user/a/alihyperloop/outputs/0069/691113/251052",
+        "/home/spolitan/alice/hf-mc/postprocess/AnalysisResults_24h1d_same_runs_merged.root",
         "/alice/cern.ch/user/a/alihyperloop/outputs/0069/690868/250864",
-        "/alice/cern.ch/user/a/alihyperloop/outputs/0069/690868/250864"
     ]  # corresponding input files for the MC labels
-    mclabels = ["23k4i", "24h1c-MB", "24h1c", "24h1d-MB", "24h1d"]  # corresponding labels for the input files
+    mclabels = [#"23k4i", "24h1c-MB", 
+                "23k4i-C",
+                "24h1d-MB", 
+                ]  # corresponding labels for the input files
     pdgs = [211, 321, 2212]  # pi, K, p
-    wagonid = ['', '', '', 'id56358', 'id36262']  # corresponding wagon IDs for the input files (if needed for downloading)
-    useTfBorderCut = False
-    download_files = [True, True, True, True, True]  # Set to True to enable downloading files from MonALISA if not present locally
+    wagonid = [#'', 'id56358', 
+        "",
+        'id56358']  # corresponding wagon IDs for the input files (if needed for downloading)
+    useTfBorderCut = [False, False, False, False, False, False]  # Set to True to use the folder with TF border cut for the corresponding input files
+    download_files = [#True, True, 
+        False, True]  # Set to True to enable downloading files from MonALISA if not present locally
     setlogx = True
 
     outfile_name = "tracking_efficiency"
@@ -94,7 +99,7 @@ if __name__ == "__main__":
 
     heff_compare = {}
     canvases = []
-    for ifile, (input_file, mclabel, download_file, id) in enumerate(zip(input_files, mclabels, download_files, wagonid)):
+    for ifile, (input_file, mclabel, download_file, id, tfborder) in enumerate(zip(input_files, mclabels, download_files, wagonid, useTfBorderCut)):
         print(f"Processing input file: {input_file} with MC label: {mclabel}")
         outfile.mkdir(mclabel)
         outfile.cd(mclabel)
@@ -103,9 +108,11 @@ if __name__ == "__main__":
         if download_file:
             download_anres(input_file, mclabel)
 
-        folder_name = "qa-efficiency" if id == '' else f"qa-efficiency_{id}"
-        if useTfBorderCut:
+        folder_name = "qa-efficiency"
+        if tfborder:
             folder_name += "_withTFBorderCut"
+        if id:
+            folder_name += f"_{id}"
         folder_name += "/MC"
         print(f"Using folder: {folder_name}")
 
@@ -117,7 +124,7 @@ if __name__ == "__main__":
         heff_its_tpc_neg = []
         for pdg in pdgs:
             heff_compare[mclabel][pdg] = {}
-            hits_pos = infile.Get(f"{folder_name}/pdg{pdg}/pt/prm/its_tpc")
+            hits_pos = infile.Get(f"{folder_name}/pdg{pdg}/pt/prm/trk/its_tpc")
             hits_tpc_pos = infile.Get(f"{folder_name}/pdg{pdg}/pt/prm/generated")
         
             outfile.mkdir(f"{mclabel}/pdg{pdg}")
@@ -125,26 +132,26 @@ if __name__ == "__main__":
 
             i = pdgs.index(pdg)
             color = colors[ifile]
-            set_style(hits_pos, color, marker_styles[i], labels[i])
-            set_style(hits_tpc_pos, color, marker_styles[i], labels[i])
+            set_style(hits_pos, color, marker_styles[0], labels[i])
+            set_style(hits_tpc_pos, color, marker_styles[0], labels[i])
 
             heff = hits_pos.Clone(f"pdg{pdg}_its_tpc_pos")
-            set_style(heff, color, marker_styles[i], labels[i])
+            set_style(heff, color, marker_styles[0], labels[i])
             heff.Divide(heff, hits_tpc_pos, 1.0, 1.0, "B")
             heff.Write()
 
             heff_its_tpc_pos.append(heff)
             heff_compare[mclabel][pdg]['pos'] = heff
-            hits_neg = infile.Get(f"{folder_name}/pdg{-pdg}/pt/prm/its_tpc")
-            hits_tpc_neg = infile.Get(f"{folder_name}/pdg{-pdg}/pt/prm/generated")    
-            set_style(hits_neg, color, marker_styles[i], labels[i])
-            set_style(hits_tpc_neg, color, marker_styles[i], labels[i])
+            hits_neg = infile.Get(f"{folder_name}/pdg{-pdg}/pt/prm/trk/its_tpc")
+            hits_tpc_neg = infile.Get(f"{folder_name}/pdg{-pdg}/pt/prm/generated")
+            set_style(hits_neg, color, marker_styles[0], labels[i])
+            set_style(hits_tpc_neg, color, marker_styles[0], labels[i])
 
             outfile.mkdir(f"{mclabel}/pdg{-pdg}")
             outfile.cd(f"{mclabel}/pdg{-pdg}")
 
             heffneg = hits_neg.Clone(f"pdg{pdg}_its_tpc_neg")
-            set_style(heffneg, color, marker_styles[i], labels[i])
+            set_style(heffneg, color, marker_styles[0], labels[i])
             heffneg.Divide(heffneg, hits_tpc_neg, 1.0, 1.0, "B")
             heffneg.Write()
             heff_its_tpc_neg.append(heffneg)
@@ -199,7 +206,9 @@ if __name__ == "__main__":
     canvas_compare.SetRightMargin(0.05)
     canvas_compare.Divide(3, 2)
     
-    legend_compare = ROOT.TLegend(0.25, 0.15, 0.85, 0.45)
+    legend_compare = ROOT.TLegend(0.18, 0.16,
+                                  0.88,
+                                  0.20*int(len(mclabels) / 3) + 0.4)
     legend_compare.SetBorderSize(1)
     legend_compare.SetTextSize(0.03)
     legend_compare.SetNColumns(3)
@@ -230,17 +239,20 @@ if __name__ == "__main__":
                 heff.DrawCopy("1Z")
             else:
                 heff.DrawCopy("1Z SAME")
-            #heffneg.DrawCopy("E1 SAME")
-
-            legend_compare.AddEntry(heff, f"{labels[i]}+ {mclabel}", "pe")
-            #legend_compare.AddEntry(heffneg, f"{labels[i]}- {mclabel}", "p")
+            if i == 0:
+                if useTfBorderCut[ifile]:
+                    legend_compare.AddEntry(heff, f"{mclabel}-TF", "pe")
+                else:
+                    legend_compare.AddEntry(heff, f"{mclabel}", "pe")
 
     canvas_compare.cd(1)
     legend_compare.Draw()
 
     # Ratio panels in bottom row: others / first input (positive charge only)
     ref_label = mclabels[0]
-    legend_ratio = ROOT.TLegend(0.25, 0.15, 0.85, 0.35)
+    legend_ratio = ROOT.TLegend(0.18, 0.16,
+                                  0.88,
+                                  0.15*int(len(mclabels) / 3) + 0.4)
     legend_ratio.SetBorderSize(1)
     legend_ratio.SetTextSize(0.03)
     #legend_ratio.SetNColumns(max(1, len(mclabels) - 1))
@@ -270,12 +282,18 @@ if __name__ == "__main__":
                 ratio.DrawCopy("1Z> SAME")
 
             if i == 0:
-                legend_ratio.AddEntry(ratio, f"{mclabel}/{ref_label}", "peC")
+                if useTfBorderCut[j]:
+                    legend_ratio.AddEntry(ratio, f"{mclabel}-TF / {ref_label}", "peC")
+                else:
+                    legend_ratio.AddEntry(ratio, f"{mclabel}/{ref_label}", "peC")
 
     canvas_compare.cd(4)
     legend_ratio.Draw()
     canvas_compare.Update()
-    canvas_compare.SaveAs(f"tracking_efficiency_comparison_{'_'.join(mclabels)}.pdf")
+    if True in useTfBorderCut:
+        canvas_compare.SaveAs(f"tracking_efficiency_comparison_{'_'.join(mclabels)}_withTFBorderCut.pdf")
+    else:
+        canvas_compare.SaveAs(f"tracking_efficiency_comparison_{'_'.join(mclabels)}.pdf")
     canvas_compare.Write()
 
     outfile.Close()
