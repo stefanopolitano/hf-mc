@@ -1,4 +1,6 @@
 import ROOT
+import yaml
+import argparse
 
 # six home-made color to mimic transparency
 _COLOR_BASES = [
@@ -52,6 +54,20 @@ def set_style(hist, color, marker, label):
     hist.GetXaxis().SetTitleOffset(1.2)
     hist.GetYaxis().SetTitleOffset(1.4)
 
+def get_run_number_from_path(path):
+    """
+    Extracts the run number from a given file path.
+    Parameters:
+        path (str): The file path to extract the run number from.
+    Returns:
+        str: The extracted run number, or "unknown" if not found.
+    """
+    import re
+    match = re.search(r'/(\d{6})/', path)
+    if match:
+        return match.group(1)
+    else:
+        return "unknown"
 
 def download_anres(file_name, mclabel):
     """
@@ -68,26 +84,25 @@ def download_anres(file_name, mclabel):
         print(f"File {file_name} already exists locally.")
 
 
-# Example usage
 if __name__ == "__main__":
-    input_files = [
-        #"/alice/cern.ch/user/a/alihyperloop/outputs/0062/626303/212981",
-        #"/alice/cern.ch/user/a/alihyperloop/outputs/0069/691113/251052",
-        "/home/spolitan/alice/hf-mc/postprocess/AnalysisResults_24h1d_same_runs_merged.root",
-        "/alice/cern.ch/user/a/alihyperloop/outputs/0069/690868/250864",
-    ]  # corresponding input files for the MC labels
-    mclabels = [#"23k4i", "24h1c-MB", 
-                "23k4i-C",
-                "24h1d-MB", 
-                ]  # corresponding labels for the input files
+
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="Plot tracking efficiency from ROOT files based on a YAML configuration.")
+    parser.add_argument("--config", type=str, default="tracking_efficiency_config.yaml", help="Path to the YAML configuration file.", required=True)
+    args = parser.parse_args()
+
+    #load configuration from YAML file
+    with open(args.config, "r") as f:
+        config = yaml.safe_load(f)
+
+    input_files = config['input_files']
+
+    mclabels = config['mc_labels']
     pdgs = [211, 321, 2212]  # pi, K, p
-    wagonid = [#'', 'id56358', 
-        "",
-        'id56358']  # corresponding wagon IDs for the input files (if needed for downloading)
-    useTfBorderCut = [False, False, False, False, False, False]  # Set to True to use the folder with TF border cut for the corresponding input files
-    download_files = [#True, True, 
-        False, True]  # Set to True to enable downloading files from MonALISA if not present locally
-    setlogx = True
+    wagonid = config['wagon_id']
+    useTfBorderCut = config['useTFBorderCut']
+    download_files = config['download_files']
+    setlogx = config['plot_style']['set_logx']
 
     outfile_name = "tracking_efficiency"
     for mc_label in mclabels:
@@ -99,6 +114,7 @@ if __name__ == "__main__":
 
     heff_compare = {}
     canvases = []
+    input_origin_label = []
     for ifile, (input_file, mclabel, download_file, id, tfborder) in enumerate(zip(input_files, mclabels, download_files, wagonid, useTfBorderCut)):
         print(f"Processing input file: {input_file} with MC label: {mclabel}")
         outfile.mkdir(mclabel)
@@ -118,8 +134,10 @@ if __name__ == "__main__":
 
         if download_file:
             infile = ROOT.TFile(f"AnalysisResults_trackeff_{mclabel}.root", "READ")
+            input_origin_label.append(f"wagon {get_run_number_from_path(input_file)}")
         else:
             infile = ROOT.TFile(input_file, "READ")
+            input_origin_label.append('local test')
         heff_its_tpc_pos = []
         heff_its_tpc_neg = []
         for pdg in pdgs:
@@ -181,10 +199,10 @@ if __name__ == "__main__":
             canvases[-1].cd(i+1).SetLogy()
 
             hpos.SetStats(0)
-            hpos.GetYaxis().SetRangeUser(3.e-1, 1.2)
+            hpos.GetYaxis().SetRangeUser(3.e-1, 1.22)
             hpos.GetYaxis().SetDecimals()
             hpos.GetYaxis().SetNdivisions(505)
-            hpos.GetXaxis().SetRangeUser(0.1, 10)
+            hpos.GetXaxis().SetRangeUser(0.1, 5)
             hpos.DrawCopy("E1")
             hneg.DrawCopy("E1 SAME")
 
@@ -208,11 +226,10 @@ if __name__ == "__main__":
     
     legend_compare = ROOT.TLegend(0.18, 0.16,
                                   0.88,
-                                  0.20*int(len(mclabels) / 3) + 0.4)
+                                  0.30)
     legend_compare.SetBorderSize(1)
     legend_compare.SetTextSize(0.03)
-    legend_compare.SetNColumns(3)
-    legend_compare.SetHeader(f"{' vs '.join(mclabels)}", "C")
+    legend_compare.SetNColumns(len(mclabels) if len(mclabels) <= 4 else 3)  # Adjust number of columns based on number of MC labels
     
     for ifile, mclabel in enumerate(mclabels):
         for i, pdg in enumerate(pdgs):
@@ -232,7 +249,7 @@ if __name__ == "__main__":
             heff.GetYaxis().SetMaxDigits(1)
             heff.GetYaxis().SetTitleOffset(1.8)
             heff.GetYaxis().SetMoreLogLabels()
-            heff.GetXaxis().SetRangeUser(0.1, 10)
+            heff.GetXaxis().SetRangeUser(0.1, 5)
             if setlogx: heff.GetXaxis().SetMoreLogLabels()
             if ifile == 0:
                 heff.SetTitle(f"Primary {labels[i]};track #it{{p}}_{{T}} (GeV/c);ITS-TPC tracking #varepsilon ({labels[i]}, primary)")
@@ -240,10 +257,15 @@ if __name__ == "__main__":
             else:
                 heff.DrawCopy("1Z SAME")
             if i == 0:
-                if useTfBorderCut[ifile]:
-                    legend_compare.AddEntry(heff, f"{mclabel}-TF", "pe")
-                else:
-                    legend_compare.AddEntry(heff, f"{mclabel}", "pe")
+                legend_compare.AddEntry(heff, f"{mclabel}", "pe")
+
+            if i == 1:  # add latex label for input origin in the middle panel
+                latex = ROOT.TLatex()
+                latex.SetNDC()
+                latex.SetTextSize(0.03)
+                latex.SetTextAlign(22)  # center alignment
+                ypos = 0.18
+                latex.DrawLatex(0.7, ypos + 0.05 * ifile, f"{mclabel} from {input_origin_label[ifile]}")
 
     canvas_compare.cd(1)
     legend_compare.Draw()
@@ -252,10 +274,10 @@ if __name__ == "__main__":
     ref_label = mclabels[0]
     legend_ratio = ROOT.TLegend(0.18, 0.16,
                                   0.88,
-                                  0.15*int(len(mclabels) / 3) + 0.4)
+                                  0.30)
     legend_ratio.SetBorderSize(1)
     legend_ratio.SetTextSize(0.03)
-    #legend_ratio.SetNColumns(max(1, len(mclabels) - 1))
+    legend_ratio.SetNColumns(len(mclabels) - 1 if len(mclabels) <= 4 else 3)  # Adjust number of columns based on number of MC labels
 
     for i, pdg in enumerate(pdgs):
         canvas_compare.cd(i + 4).SetGridy()
@@ -273,7 +295,7 @@ if __name__ == "__main__":
             ratio.GetYaxis().SetNdivisions(515)
             ratio.GetYaxis().SetTitleOffset(1.8)
             ratio.GetYaxis().SetTitle(f"others / {ref_label}")
-            ratio.GetXaxis().SetRangeUser(0.1, 10)
+            ratio.GetXaxis().SetRangeUser(0.1, 5)
             if setlogx: ratio.GetXaxis().SetMoreLogLabels()
 
             if j == 1:
@@ -282,10 +304,7 @@ if __name__ == "__main__":
                 ratio.DrawCopy("1Z> SAME")
 
             if i == 0:
-                if useTfBorderCut[j]:
-                    legend_ratio.AddEntry(ratio, f"{mclabel}-TF / {ref_label}", "peC")
-                else:
-                    legend_ratio.AddEntry(ratio, f"{mclabel}/{ref_label}", "peC")
+                legend_ratio.AddEntry(ratio, f"{mclabel}/{ref_label}", "peC")
 
     canvas_compare.cd(4)
     legend_ratio.Draw()

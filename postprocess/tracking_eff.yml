@@ -1,0 +1,10 @@
+input_files: [/alice/cern.ch/user/a/alihyperloop/outputs/0069/692981/252054,
+              /alice/cern.ch/user/a/alihyperloop/outputs/0069/692866/251940
+]
+download_files: [true, true, true, true, true, true]
+mc_labels: [ "25g3b-beauty-TF", "26c9-beauty-TF"]
+useTFBorderCut: [false, false, false, false, false, false, false]
+wagon_id: ['beautywithTFBorderCut', 'beautywithTFBorderCut', 'beautywithTFBorderCut', 'beautywithoutTFBorderCut', 'MBwithTFBorderCut', 'MBwithoutTFBorderCut']
+
+plot_style: 
+  set_logx: true
