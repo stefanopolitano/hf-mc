@@ -7,6 +7,9 @@ import argparse
 import numpy as np
 import ROOT
 
+# stop figure display
+ROOT.gROOT.SetBatch(True)
+
 # gloabal variables
 particle_data = [
     ("DzeroToKPi", "D^{0}#rightarrow K#pi"),
@@ -27,8 +30,8 @@ particle_data = [
     ("OmegaCToOmegaPi", "#Omega_{c}^{0}#rightarrow#Omega#pi"),
     ("OmegaCToXiPi", "#Omega_{c}^{0}#rightarrow#Xi#pi"),
 ]
-plot_full=False # plot additional info, not needed for std QA
-nmesons=10 # number of meson needed to properly handle baryon histos
+plot_full=True # plot additional info, not needed for std QA
+nmesons=3 # number of meson needed to properly handle baryon histos
 
 # Extract part names and labels from particle_data
 part_names, part_labels = zip(*particle_data)
@@ -59,6 +62,7 @@ def compute_eff_vcent(th2gen, th2reco, centmin, centmax):
     if proj_gen_p.GetEntries() != 0:
         h_eff.Divide(proj_reco_p, proj_gen_p, 1., 1., "B")
     else:
+        print(f"Warning: no entries in generated histogram for centrality {centmin}-{centmax}%, efficiency set to 0")
         h_eff.Reset()
 
     return h_eff
@@ -204,6 +208,17 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
     h_abundances_nonpromptmeson.Scale(1./n_events)
     h_abundances_promptbaryon.Scale(1./n_events)
     h_abundances_nonpromptbaryon.Scale(1./n_events)
+
+    histXvtxReco = infile.Get(f"{task_rec_name}/histXvtxReco")
+    histYvtxReco = infile.Get(f"{task_rec_name}/histYvtxReco")
+    histDeltaZvtx = infile.Get(f"{task_rec_name}/histDeltaZvtx")
+    histXvtxReco.SetDirectory(0)
+    histYvtxReco.SetDirectory(0)
+    histDeltaZvtx.SetDirectory(0)
+    histDeltaZvtxProj = histDeltaZvtx.ProjectionY("histDeltaZvtxProj")
+    set_style(histXvtxReco, decay='prompt')
+    set_style(histYvtxReco, decay='prompt')
+    set_style(histDeltaZvtxProj, decay='prompt')
 
     # mesons
     canv_abundances = ROOT.TCanvas("canv_abundances", "", 600, 600)
@@ -521,6 +536,7 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
 
         # pp
         else:
+            print("pp analysis")
             h_eff_prompt[ipart].append(compute_eff_vcent(h_pt_vcent_gen_prompt[part_name],
                                                   h_pt_vcent_reco_prompt[part_name],
                                                   0, 110))
@@ -540,11 +556,13 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
 
         if plot[ipart]:
             # Plot efficency (integrated if pp, vs cent if PbPb)
+            print("Plotting efficiency vs centrality (or integrated if pp)")
             for ihisto, (heff_p, heff_np, heff_ratio) in enumerate(zip(h_eff_prompt[ipart],
                                                                        h_eff_nonprompt[ipart],
                                                                        h_eff_ratio[ipart])):
 
                 if (heff_p.GetEntries() == 0 or heff_np.GetEntries() == 0):
+                    print(f"Skipping {part_name} centrality bin {ihisto} due to empty histogram")
                     continue
 
                 if ihisto == 0:
@@ -1037,6 +1055,11 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
     h_abundances_nonpromptmeson.Write()
     h_abundances_promptbaryon.Write()
     h_abundances_nonpromptbaryon.Write()
+    histXvtxReco.Write()
+    histYvtxReco.Write()
+    histDeltaZvtx.Write()
+    histDeltaZvtxProj.Write()
+
     for hist in h_pt_gen_prompt:
         hist.Write()
     for hist in h_pt_gen_nonprompt:

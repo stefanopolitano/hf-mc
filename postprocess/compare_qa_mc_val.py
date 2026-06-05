@@ -16,6 +16,7 @@ def set_obj_style(obj, col, mark):
     obj.SetLineWidth(2)
     obj.SetMarkerColorAlpha(col, 0.6)
     obj.SetMarkerStyle(mark)
+    obj.SetMarkerSize(1.6)
 
 
 def compare(infiles, labels, outdir):
@@ -34,10 +35,8 @@ def compare(infiles, labels, outdir):
     ROOT.gStyle.SetOptTitle(0)
     ROOT.gStyle.SetPalette(ROOT.kRainBow)
     ROOT.gStyle.SetMarkerSize(1.2)
-    colors = [ROOT.kRed+2, #ROOT.kRed-6, ROOT.kOrange-1,
-              #ROOT.kSpring, ROOT.kTeal-1, ROOT.kViolet+3,
-              #ROOT.kAzure+6,
-              ROOT.kBlue+2 , ROOT.kCyan+4]
+    colors = [ROOT.kBlack, ROOT.kRed+1, ROOT.kAzure+4,
+              ROOT.kOrange+1, ROOT.kGreen+2, ROOT.kBlue+2, ROOT.kCyan+4]
        
     markers = [ROOT.kFullCircle, ROOT.kFullSquare, ROOT.kFullDiamond,
                ROOT.kFullTriangleUp, ROOT.kFullCross, ROOT.kOpenCircle,
@@ -77,6 +76,7 @@ def compare(infiles, labels, outdir):
 
     h_abundancy_prompt, h_abundancy_nonprompt, h_ntracks, h_prompt_eff, h_nonprompt_eff, h_ratio_eff = (
         [] for _ in range(6))
+    histXvtxReco, histYvtxReco, histDeltaZvtxProj = ([] for i in range(3))
     h_frac_amb, h_eff_amb = [], []
     (
     h_pt_gen_prompt,
@@ -112,24 +112,31 @@ def compare(infiles, labels, outdir):
         for had in hadrons:
             h_prompt_eff[i_file][had] = infile.Get(
                 f"efficiencies/h_eff_prompt{had}vcent0_110")
+            h_prompt_eff[i_file][had].SetDirectory(0)
             h_nonprompt_eff[i_file][had] = infile.Get(
                 f"efficiencies/h_eff_nonprompt{had}vcent0_110")
+            h_nonprompt_eff[i_file][had].SetDirectory(0)
             h_ratio_eff[i_file][had] = infile.Get(
                 f"efficiencies/h_eff_ratio{had}vcent0_110")
+            h_ratio_eff[i_file][had].SetDirectory(0)
             h_pt_gen_prompt[i_file][had] = infile.Get(
                 f"gen-distr/h_pt_gen_prompt{had}")
+            h_pt_gen_prompt[i_file][had].SetDirectory(0)
             h_pt_gen_fd[i_file][had] = infile.Get(
                 f"gen-distr/h_pt_gen_nonprompt{had}")
+            h_pt_gen_fd[i_file][had].SetDirectory(0)
             h_y_gen_prompt[i_file][had] = infile.Get(
                 f"gen-distr/h_y_gen_prompt{had}")
+            h_y_gen_prompt[i_file][had].SetDirectory(0)
             h_y_gen_fd[i_file][had] = infile.Get(
                 f"gen-distr/h_y_gen_nonprompt{had}")
+            h_y_gen_fd[i_file][had].SetDirectory(0)
             h_declenen_gen_prompt[i_file][had] = infile.Get(
                 f"gen-distr/h_declenen_gen_prompt{had}")
+            h_declenen_gen_prompt[i_file][had].SetDirectory(0)
             h_declenen_gen_fd[i_file][had] = infile.Get(
                 f"gen-distr/h_declenen_gen_nonprompt{had}")
-            h_prompt_eff[i_file][had].SaveAs('cicio.root')
-            input()
+            h_declenen_gen_fd[i_file][had].SetDirectory(0)
 
             set_obj_style(h_prompt_eff[i_file][had], color, marker)
             set_obj_style(h_nonprompt_eff[i_file][had], color, marker)
@@ -149,10 +156,21 @@ def compare(infiles, labels, outdir):
             f"gen-distr/h_abundances_promptbaryon")
         h_abundancy_nonprompt[i_file]['baryon'] = infile.Get(
             f"gen-distr/h_abundances_nonpromptbaryon")
+        histXvtxReco.append(infile.Get("gen-distr/histXvtxReco"))
+        histXvtxReco[-1].SetDirectory(0)
+        histYvtxReco.append(infile.Get("gen-distr/histYvtxReco"))
+        histYvtxReco[-1].SetDirectory(0)
+        histDeltaZvtxProj.append(infile.Get("gen-distr/histDeltaZvtxProj"))
+        histDeltaZvtxProj[-1].SetDirectory(0)
         set_obj_style(h_abundancy_prompt[i_file]['meson'], color, marker)
         set_obj_style(h_abundancy_nonprompt[i_file]['meson'], color, marker)
         set_obj_style(h_abundancy_prompt[i_file]['baryon'], color, marker)
         set_obj_style(h_abundancy_nonprompt[i_file]['baryon'], color, marker)
+        set_obj_style(histXvtxReco[-1], color, marker)
+        set_obj_style(histYvtxReco[-1], color, marker)
+        set_obj_style(histDeltaZvtxProj[-1], color, marker)
+    print("Finished retrieving histograms and setting styles")
+
 
     line_at_unity = ROOT.TLine(0., 1., 50., 1.)
     line_at_unity.SetLineColor(ROOT.kGray+1)
@@ -164,23 +182,26 @@ def compare(infiles, labels, outdir):
     leg.SetBorderSize(0)
     leg.SetTextSize(0.03)
     for i_file, label in enumerate(labels):
-        leg.AddEntry(h_prompt_eff[i_file][had], label, "pl")
+        leg.AddEntry(h_prompt_eff[i_file][had], label, "pe")
 
     c_abundancy = ROOT.TCanvas("c_abundancy", "", 1600, 1600)
     c_abundancy.Divide(2, 2)
     c_abundancy.cd(1).SetLogy()
     h_abundancy_prompt[0]['meson'].Draw("HIST E")
     for i_file in range(1, n_files):
-        h_abundancy_prompt[i_file]['meson'].Draw("HIST E same")
+        if h_abundancy_prompt[i_file]['meson'].Integral() != 0:
+            h_abundancy_prompt[i_file]['meson'].Draw("HIST E same")
     leg.Draw()
     c_abundancy.cd(2).SetLogy()
     h_abundancy_nonprompt[0]['meson'].Draw("HIST E")
     for i_file in range(1, n_files):
-        h_abundancy_nonprompt[i_file]['meson'].Draw("HIST E same")
+        if h_abundancy_nonprompt[i_file]['meson'].Integral() != 0:
+            h_abundancy_nonprompt[i_file]['meson'].Draw("HIST E same")
     c_abundancy.cd(3).SetLogy()
     h_abundancy_prompt[0]['baryon'].Draw("HIST E")
     for i_file in range(1, n_files):
-        h_abundancy_prompt[i_file]['baryon'].Draw("HIST E same")
+        if h_abundancy_prompt[i_file]['baryon'].Integral() != 0:
+            h_abundancy_prompt[i_file]['baryon'].Draw("HIST E same")
     c_abundancy.cd(4).SetLogy()
     h_abundancy_nonprompt[0]['baryon'].Draw("HIST E")
     for i_file in range(1, n_files):
@@ -188,10 +209,33 @@ def compare(infiles, labels, outdir):
     c_abundancy.Modified()
     c_abundancy.Update()
 
+    c_vtx_reco = ROOT.TCanvas("c_vtx_reco", "", 2200, 800)
+    c_vtx_reco.Divide(3, 1)
+    c_vtx_reco.cd(1).SetRightMargin(0.1)
+    c_vtx_reco.cd(1).SetLogy()
+    c_vtx_reco.SetRightMargin(0.1)
+    histXvtxReco[0].DrawNormalized("HIST E")
+    for i_file in range(1, n_files):
+        histXvtxReco[i_file].DrawNormalized("HIST E same")
+    leg.Draw()
+    c_vtx_reco.cd(2).SetRightMargin(0.1)
+    c_vtx_reco.cd(2).SetLogy()
+    histYvtxReco[0].DrawNormalized("HIST E")
+    for i_file in range(1, n_files):
+        histYvtxReco[i_file].DrawNormalized("HIST E same")
+    c_vtx_reco.cd(3).SetRightMargin(0.1)
+    c_vtx_reco.cd(3).SetLogy()
+    histDeltaZvtxProj[0].DrawNormalized("HIST E")
+    for i_file in range(1, n_files):
+        histDeltaZvtxProj[i_file].DrawNormalized("HIST E same")
+    c_vtx_reco.Modified()
+    c_vtx_reco.Update()
+
     c_reco_coll_eff = ROOT.TCanvas("c_reco_coll_eff", "", 1200, 800)
     c_reco_coll_eff.SetRightMargin(0.1)
     hist_reco_coll_eff.GetYaxis().SetRangeUser(0., 1.1)
-    hist_reco_coll_eff.Draw("HIST E")
+    if hist_reco_coll_eff.GetBinContent(1) != 0:
+        hist_reco_coll_eff.Draw("HIST E")
     c_reco_coll_eff.Modified()
     c_reco_coll_eff.Update()
 
@@ -200,7 +244,8 @@ def compare(infiles, labels, outdir):
                      ";number of global tracks;normalised counts")
     c_mult.SetLogy()
     for hist in h_ntracks:
-        hist.Draw("same")
+        if (hist.Integral() != 0):
+            hist.Draw("same")
     leg.Draw()
     c_mult.Modified()
     c_mult.Update()
@@ -480,6 +525,7 @@ def compare(infiles, labels, outdir):
     c_y_gen_fd.Update()
 
     c_abundancy.SaveAs(os.path.join(outdir, f"{prefix}_abundancy_{suffix}.pdf"))
+    c_vtx_reco.SaveAs(os.path.join(outdir, f"{prefix}_vtx_reco_{suffix}.pdf"))
     c_reco_coll_eff.SaveAs(os.path.join(outdir, f"{prefix}_reco_collision_eff_{suffix}.pdf"))
     c_mult.SaveAs(os.path.join(outdir, f"{prefix}_mult_distr_{suffix}.pdf"))
     c_eff_prompt.SaveAs(os.path.join(outdir, f"{prefix}_prompt_efficiencies_{suffix}.pdf"))
@@ -530,6 +576,7 @@ def compare(infiles, labels, outdir):
     for dictionary in h_eff_amb:
         for hist in dictionary.values():
             hist.Write()
+    c_reco_coll_eff.Write()
     c_reco_coll_eff.Write()
     c_mult.Write()
     c_eff_prompt.Write()
