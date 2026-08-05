@@ -1,0 +1,31 @@
+input_files: [ /home/spolitan/alice/hf-mc/postprocess/AnalysisResults_trackeff_26g4.root,
+              /home/spolitan/alice/hf-mc/postprocess/AnalysisResults_trackeff_26g5.root,
+              
+]
+download_files: [true, false]
+mc_labels: [ "26g4", "26g5"]
+path_to_th2: {
+  26g4: {  
+    pi: "pid-tpc-qa-mc/signalMCprm/Pi",
+    ka: "pid-tpc-qa-mc_kaon/signalMCprm/Ka",
+    pr: "pid-tpc-qa-mc_proton/signalMCprm/Pr"
+},
+  26g5: {
+    pi: "pid-tpc-qa-mc/signalMCprm/Pi",
+    ka: "pid-tpc-qa-mc_kaon/signalMCprm/Ka",
+    pr: "pid-tpc-qa-mc_proton/signalMCprm/Pr"
+}
+}
+wagon_id: ['', '']
+output_directory: /home/spolitan/alice/hf-mc/postprocess/trk_eff_26g4/
+
+plot_style: 
+  set_logx: true
+  set_logy: false
+  set_logz: true
+  xmin: 1.e-3
+  xmax: 2
+  ymin: 0.
+  ymax: 400
+  rebinx: 5
+  rebiny: 2
