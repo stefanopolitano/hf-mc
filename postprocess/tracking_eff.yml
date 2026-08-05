@@ -1,10 +1,21 @@
-input_files: [/alice/cern.ch/user/a/alihyperloop/outputs/0069/692981/252054,
-              /alice/cern.ch/user/a/alihyperloop/outputs/0069/692866/251940
+input_files: [/alice/cern.ch/user/a/alihyperloop/outputs/0073/731597/278361/,
+              /alice/cern.ch/user/a/alihyperloop/outputs/0073/731474/278284/,
+              
 ]
-download_files: [true, true, true, true, true, true]
-mc_labels: [ "25g3b-beauty-TF", "26c9-beauty-TF"]
-useTFBorderCut: [false, false, false, false, false, false, false]
-wagon_id: ['beautywithTFBorderCut', 'beautywithTFBorderCut', 'beautywithTFBorderCut', 'beautywithoutTFBorderCut', 'MBwithTFBorderCut', 'MBwithoutTFBorderCut']
+download_files: [true, true]
+mc_labels: [ "26g4", "26g5"]
+wagon_id: ['0_MB', '0_MB']
+output_directory: /home/spolitan/alice/hf-mc/postprocess/trk_eff_26g4/
+
+do_plots:
+  do_single_species: false
+  do_reco_gen: false
+  do_compare_mc: true
 
 plot_style: 
   set_logx: true
+  set_logy: true
+  ptmin: 0.1
+  ptmax: 10
+  ymin: 0.01
+  ymax: 1.2
