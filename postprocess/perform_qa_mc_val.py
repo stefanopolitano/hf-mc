@@ -31,7 +31,7 @@ particle_data = [
     ("OmegaCToXiPi", "#Omega_{c}^{0}#rightarrow#Xi#pi"),
 ]
 plot_full=True # plot additional info, not needed for std QA
-nmesons=3 # number of meson needed to properly handle baryon histos
+nmesons=10 # number of meson needed to properly handle baryon histos
 
 # Extract part names and labels from particle_data
 part_names, part_labels = zip(*particle_data)
@@ -252,6 +252,20 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
     canv_abundances.SaveAs(os.path.join(
         outpath, f"particle_abundances_mesons{suffix}.pdf"))
 
+    # prompt over non-prompt ratio
+    canv_ratio = ROOT.TCanvas("canv_ratio", "", 600, 600)
+    h_ratio = h_abundances_promptmeson.Clone("h_ratio")
+    h_ratio.Divide(h_abundances_nonpromptmeson)
+    h_ratio.SetTitle("Prompt over Non-Prompt Ratio; ; Prompt/Non-Prompt abundancy")
+    h_ratio.SetLineColor(ROOT.kBlack)
+    h_ratio.GetYaxis().SetRangeUser(0., 4.)
+    h_ratio.SetLineWidth(2)
+    h_ratio.Draw("hist")
+    canv_ratio.Modified()
+    canv_ratio.Update()
+    canv_ratio.SaveAs(os.path.join(
+        outpath, f"particle_abundances_mesons_ratio{suffix}.pdf"))
+
     # baryons
     canv_abundances_baryons = ROOT.TCanvas("canv_abundances_baryons", "", 600, 600)
     leg_abundances_baryons = ROOT.TLegend(0.5, 0.7, 0.8, 0.9)
@@ -279,6 +293,20 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
     canv_abundances_baryons.Update()
     canv_abundances_baryons.SaveAs(os.path.join(
         outpath, f"particle_abundances_baryons{suffix}.pdf"))
+
+    # prompt over non-prompt ratio baryons
+    canv_ratio_baryons = ROOT.TCanvas("canv_ratio_baryons", "", 600, 600)
+    h_ratio_baryons = h_abundances_promptbaryon.Clone("h_ratio_baryons")
+    h_ratio_baryons.Divide(h_abundances_nonpromptbaryon)
+    h_ratio_baryons.SetTitle("Prompt over Non-Prompt Ratio; ; Prompt/Non-Prompt abundancy")
+    h_ratio_baryons.SetLineColor(ROOT.kBlack)
+    h_ratio_baryons.SetLineWidth(2)
+    h_ratio_baryons.GetYaxis().SetRangeUser(0., 4.)
+    h_ratio_baryons.Draw("hist")
+    canv_ratio_baryons.Modified()
+    canv_ratio_baryons.Update()
+    canv_ratio_baryons.SaveAs(os.path.join(
+        outpath, f"particle_abundances_baryons_ratio{suffix}.pdf"))
 
 
     # efficiencies mesons
