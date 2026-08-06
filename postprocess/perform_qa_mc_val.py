@@ -83,6 +83,17 @@ def set_style(th1, decay='prompt'):
     th1.SetLineWidth(2)
     th1.SetMarkerStyle(marker)
 
+def set_summary_style(th1, color, marker):
+    th1.SetLineColor(color)
+    th1.SetMarkerColor(color)
+    th1.SetMarkerStyle(marker)
+    th1.SetLineWidth(2)
+
+def get_interval_label(index, bins, integrated_label):
+    if index == 0:
+        return integrated_label
+    return f"{bins[index - 1]}-{bins[index]}%"
+
 # pylint: disable=too-many-locals,too-many-statements, too-many-branches, no-member
 def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_type, batch):
     """
@@ -254,13 +265,13 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
 
     # prompt over non-prompt ratio
     canv_ratio = ROOT.TCanvas("canv_ratio", "", 600, 600)
-    h_ratio = h_abundances_promptmeson.Clone("h_ratio")
-    h_ratio.Divide(h_abundances_nonpromptmeson)
-    h_ratio.SetTitle("Prompt over Non-Prompt Ratio; ; Prompt/Non-Prompt abundancy")
-    h_ratio.SetLineColor(ROOT.kBlack)
-    h_ratio.GetYaxis().SetRangeUser(0., 4.)
-    h_ratio.SetLineWidth(2)
-    h_ratio.Draw("hist")
+    h_ratio_meson_abundancy = h_abundances_promptmeson.Clone("h_ratio")
+    h_ratio_meson_abundancy.Divide(h_abundances_nonpromptmeson)
+    h_ratio_meson_abundancy.SetTitle("Prompt over Non-Prompt Ratio; ; Prompt/Non-Prompt abundancy")
+    h_ratio_meson_abundancy.SetLineColor(ROOT.kBlack)
+    h_ratio_meson_abundancy.GetYaxis().SetRangeUser(0., 4.)
+    h_ratio_meson_abundancy.SetLineWidth(2)
+    h_ratio_meson_abundancy.Draw("hist")
     canv_ratio.Modified()
     canv_ratio.Update()
     canv_ratio.SaveAs(os.path.join(
@@ -296,18 +307,38 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
 
     # prompt over non-prompt ratio baryons
     canv_ratio_baryons = ROOT.TCanvas("canv_ratio_baryons", "", 600, 600)
-    h_ratio_baryons = h_abundances_promptbaryon.Clone("h_ratio_baryons")
-    h_ratio_baryons.Divide(h_abundances_nonpromptbaryon)
-    h_ratio_baryons.SetTitle("Prompt over Non-Prompt Ratio; ; Prompt/Non-Prompt abundancy")
-    h_ratio_baryons.SetLineColor(ROOT.kBlack)
-    h_ratio_baryons.SetLineWidth(2)
-    h_ratio_baryons.GetYaxis().SetRangeUser(0., 4.)
-    h_ratio_baryons.Draw("hist")
+    h_ratio_baryons_abundancy = h_abundances_promptbaryon.Clone("h_ratio_baryons")
+    h_ratio_baryons_abundancy.Divide(h_abundances_nonpromptbaryon)
+    h_ratio_baryons_abundancy.SetTitle("Prompt over Non-Prompt Ratio; ; Prompt/Non-Prompt abundancy")
+    h_ratio_baryons_abundancy.SetLineColor(ROOT.kBlack)
+    h_ratio_baryons_abundancy.SetLineWidth(2)
+    h_ratio_baryons_abundancy.GetYaxis().SetRangeUser(0., 4.)
+    h_ratio_baryons_abundancy.Draw("hist")
     canv_ratio_baryons.Modified()
     canv_ratio_baryons.Update()
     canv_ratio_baryons.SaveAs(os.path.join(
         outpath, f"particle_abundances_baryons_ratio{suffix}.pdf"))
-
+    
+    # Add summary plot with meson, meson ratio, baryon, baryon ratio
+    canv_summary_abundances = ROOT.TCanvas("canv_summary_abundances", "", 800, 800)
+    canv_summary_abundances.Divide(2, 2)
+    canv_summary_abundances.cd(1).SetLogy()
+    h_abundances_promptmeson.GetYaxis().SetRangeUser(1.e-8, 1.e2)
+    h_abundances_promptmeson.Draw("hist")
+    h_abundances_nonpromptmeson.Draw("histsame")
+    canv_summary_abundances.cd(2)
+    h_ratio_meson_abundancy.GetYaxis().SetRangeUser(0., 4.)
+    h_ratio_meson_abundancy.Draw("hist")
+    canv_summary_abundances.cd(3).SetLogy()
+    h_abundances_promptbaryon.GetYaxis().SetRangeUser(1.e-8, 1.e2)
+    h_abundances_promptbaryon.Draw("hist")
+    h_abundances_nonpromptbaryon.Draw("histsame")
+    canv_summary_abundances.cd(4)
+    h_ratio_baryons_abundancy.GetYaxis().SetRangeUser(0., 4.)
+    h_ratio_baryons_abundancy.Draw("hist")
+    canv_summary_abundances.Modified()
+    canv_summary_abundances.Update()
+    canv_summary_abundances.SaveAs(os.path.join(outpath, f"particle_abundances_summary{suffix}.pdf"))
 
     # efficiencies mesons
     h_pt_reco_prompt, h_pt_reco_nonprompt = {}, {}
@@ -676,6 +707,43 @@ def perform_qa_mc_val(infile, outpath, suffix, coll_system, coll_ass_tof, event_
                     canv_ratio.Modified()
                     canv_ratio.Update()
                     if plot_full: canv_ratio.SaveAs(os.path.join(outpath, f"{part_name}_efficiency_ratio{occ_label}{suffix}.pdf"))
+
+    # Add multipad figure for efficiency vs centrality (or integrated if pp)
+    # D0, D+, Lc, Xic prompt and non-prompt efficiency and their ratio
+    # 2 pad per particle (prompt and non-prompt) + 1 pad for ratio
+    summary_canvas = ROOT.TCanvas(
+        "summary_efficiency_vs_centrality",
+        "",
+        600,
+        1200
+    )
+    summary_canvas.Divide(2, 4)
+    ipad = 1
+    for ihisto, (hp, hnp, heff_r) in enumerate(zip(h_eff_prompt, h_eff_nonprompt, h_eff_ratio)):
+        # plot only D0, D+, Lc, Xic
+        if ihisto not in [0, 2, 10, 12]:
+            continue
+        # plot prompt and non-prompt efficiency in the left pad
+        summary_canvas.cd(ipad)
+        summary_canvas.cd(ipad).SetGridy()
+        summary_canvas.cd(ipad).SetGridx()
+        summary_canvas.cd(ipad).SetLogy()
+        summary_canvas.cd(ipad).DrawFrame(1.e-10,
+                                              max(min(hp[0].GetMinimum(), hnp[0].GetMinimum()), 1.e-5) * 0.5,
+                                              pt_bins[-1],
+                                              1.5,
+                                              "Centrality interval ;#it{p}_{T} (GeV/#it{c});"
+                                              f"{part_labels[ihisto]} efficiency #times acceptance")
+        hp[0].Draw("same")
+        hnp[0].Draw("same")
+        # plot ratio in the right pad
+        summary_canvas.cd(ipad+1)
+        heff_r[0].Draw("same")
+        ipad += 2
+
+    summary_canvas.Modified()
+    summary_canvas.Update()
+    summary_canvas.SaveAs(os.path.join(outpath, f"efficiency_summary{suffix}.pdf"))
 
     h_ass, h_nonass, h_assgood, h_assgood_amb, \
         h_eff_ass, h_eff_assgood, h_eff_assgood_wamb = (
