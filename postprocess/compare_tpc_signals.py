@@ -38,9 +38,9 @@ def make_mean_graph_x_slices(hist2, name):
         if projection.GetEntries() > 0:
             y_mean = projection.GetMean()
             y_err = projection.GetMeanError()
-        else:
-            y_mean = 0.0
-            y_err = 0.0
+        #else:
+        #    y_mean = 0.0
+        #    y_err = 0.0
 
         graph.SetPoint(point, x_center, y_mean)
         graph.SetPointError(point, x_err, y_err)
@@ -52,6 +52,13 @@ def make_mean_graph_x_slices(hist2, name):
     graph.SetLineWidth(2)
 
     return graph
+
+def style_mean_graph(graph, color, marker_style):
+    graph.SetMarkerStyle(marker_style)
+    graph.SetMarkerSize(0.9)
+    graph.SetMarkerColor(color)
+    graph.SetLineColor(color)
+    graph.SetLineWidth(2)
 
 if __name__ == "__main__":
 
@@ -138,6 +145,25 @@ if __name__ == "__main__":
     
     ipad = 1
     mean_graphs = {}
+    colors = [
+        ROOT.kBlack,
+        ROOT.kRed + 1,
+        ROOT.kBlue + 1,
+        ROOT.kGreen + 2,
+        ROOT.kMagenta + 1,
+        ROOT.kOrange + 7,
+        ROOT.kCyan + 2,
+    ]
+    colors = [ROOT.TColor.GetColorTransparent(c, 0.6) for c in colors]
+    marker_styles = [
+        ROOT.kFullCircle,
+        ROOT.kFullSquare,
+        ROOT.kFullTriangleUp,
+        ROOT.kFullTriangleDown,
+        ROOT.kOpenCircle,
+        ROOT.kOpenSquare,
+        ROOT.kOpenTriangleUp,
+    ]
     for pdg in pdgs:
         for mclabel in mclabels:
             canvas.cd(ipad)
@@ -169,3 +195,38 @@ if __name__ == "__main__":
     
     canvas.Update()
     canvas.SaveAs(f"{outdir}/{outfile_name}")
+
+    mean_canvas = ROOT.TCanvas("mean_canvas", "Mean TPC dE/dx by MC", 400, 400 * len(pdgs))
+    mean_canvas.Divide(1, len(pdgs))
+    mean_canvas_objects = []
+    for ipad, pdg in enumerate(pdgs, start=1):
+        mean_canvas.cd(ipad)
+        if setlogx: ROOT.gPad.SetLogx()
+        if setlogy: ROOT.gPad.SetLogy()
+
+        multigraph = ROOT.TMultiGraph(
+            f"mg_mean_{pdg}",
+            f"Mean TPC dE/dx - {pdg_title[pdg]};#it{{p}} (GeV/#it{{c}}) ;#LT dE/dx #GT"
+        )
+        legend = ROOT.TLegend(0.65, 0.65, 0.88, 0.88)
+        legend.SetBorderSize(0)
+        legend.SetFillStyle(0)
+        legend.SetTextSize(0.04)
+
+        for imc, mclabel in enumerate(mclabels):
+            mean_graph = mean_graphs[(mclabel, pdg)]
+            color = colors[imc % len(colors)]
+            marker_style = marker_styles[imc % len(marker_styles)]
+            style_mean_graph(mean_graph, color, marker_style)
+            multigraph.Add(mean_graph, "PZ")
+            legend.AddEntry(mean_graph, mclabel, "pl")
+
+        multigraph.Draw("A PZ")
+        multigraph.GetXaxis().SetLimits(xmin, xmax)
+        multigraph.GetYaxis().SetRangeUser(ymin, ymax)
+        
+        if ipad == 1: legend.Draw()
+        mean_canvas_objects.extend([multigraph, legend])
+
+    mean_canvas.Update()
+    mean_canvas.SaveAs(f"{outdir}/{outfile_name.replace('.pdf', '_mean_mcs.pdf')}")
